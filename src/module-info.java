@@ -1,1 +1,1 @@
-module kurulus {}
+module kurulus { requires java.desktop; }
