@@ -64,7 +64,7 @@ public final class Input
 
   public Vector getCursorPosition() { return cursorPosition; }
   public Vector getCursorMovement() { return cursorMovement; }
-  public int getWheelAccumulatedRotation() { return wheelPreviousRotation; }
+  public int getWheelRotation() { return wheelPreviousRotation; }
   public boolean isWindowClosing() { return windowClosing; }
   public boolean isWindowActive() { return windowActive; }
 
