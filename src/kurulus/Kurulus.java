@@ -1,5 +1,9 @@
 package kurulus;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Stroke;
 import java.awt.event.KeyEvent;
 
 import kurulus.display.Display;
@@ -7,8 +11,6 @@ import kurulus.display.Renderer;
 import kurulus.display.input.Input;
 import kurulus.userinterface.GameInterface;
 import kurulus.userinterface.UserInterface;
-import java.awt.Font;
-import java.awt.Color;
 
 public final class Kurulus {
   public static final int    MAJOR_VERSION = 0;
@@ -17,21 +19,26 @@ public final class Kurulus {
   public static final String VERSION       =
     "%d.%d.%d".formatted(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
 
-  public static final int WINDOW_WIDTH  = 1280;
-  public static final int WINDOW_HEIGHT = 720;
+  public static final int    WINDOW_WIDTH  = 1280;
+  public static final int    WINDOW_HEIGHT = 720;
+  public static final Vector WINDOW_SIZE   =
+    new Vector().set(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   public static final double TICK_RATE = 100;
 
   public static final int WORLD_SIZE = 100;
 
-  public static final float SCALE_BASE   = 1.2f;
-  public static final int   MINIMUM_ZOOM = 10;
-  public static final int   INITIAL_ZOOM = 15;
-  public static final int   MAXIMUM_ZOOM = 25;
+  public static final double SCALE_BASE   = 1.2;
+  public static final int    MINIMUM_ZOOM = 10;
+  public static final int    INITIAL_ZOOM = 15;
+  public static final int    MAXIMUM_ZOOM = 25;
 
   public static final Font  DEBUG_FONT       = new Font("Hack", Font.PLAIN, 10);
   public static final Color DEBUG_FOREGROUND = new Color(1f, 1f, 1f);
   public static final Color DEBUG_BACKGROUND = new Color(0, 0, 0, 0.5f);
+
+  public static final Color  MAP_GRID_COLOR  = new Color(1f, 1f, 1f);
+  public static final Stroke MAP_GRID_STROKE = new BasicStroke(1f);
 
   private final Display display;
 

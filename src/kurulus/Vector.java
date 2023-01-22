@@ -11,34 +11,34 @@ public class Vector {
   }
 
   public Vector set(Vector a) {
-    this.x = a.x;
-    this.y = a.y;
+    x = a.x;
+    y = a.y;
     return this;
   }
 
   public Vector copy() { return new Vector().set(this); }
 
   public Vector add(Vector a) {
-    this.x += a.x;
-    this.y += a.y;
+    x += a.x;
+    y += a.y;
     return this;
   }
 
   public Vector sub(Vector a) {
-    this.x -= a.x;
-    this.y -= a.y;
+    x -= a.x;
+    y -= a.y;
     return this;
   }
 
   public Vector mul(float s) {
-    this.x *= s;
-    this.y *= s;
+    x *= s;
+    y *= s;
     return this;
   }
 
   public Vector div(float s) {
-    this.x /= s;
-    this.y /= s;
+    x /= s;
+    y /= s;
     return this;
   }
 
@@ -51,6 +51,18 @@ public class Vector {
   public Vector floor() {
     x = (float) Math.floor(x);
     y = (float) Math.floor(y);
+    return this;
+  }
+
+  public Vector max(Vector a) {
+    x = Math.max(x, a.x);
+    y = Math.max(y, a.y);
+    return this;
+  }
+
+  public Vector min(Vector a) {
+    x = Math.min(x, a.x);
+    y = Math.min(y, a.y);
     return this;
   }
 }

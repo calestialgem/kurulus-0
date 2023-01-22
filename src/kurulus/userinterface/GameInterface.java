@@ -1,9 +1,6 @@
 package kurulus.userinterface;
 
 import java.awt.event.MouseEvent;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 import kurulus.Kurulus;
 import kurulus.Main;
@@ -13,30 +10,43 @@ import kurulus.world.World;
 
 public final class GameInterface implements UserInterface {
   private final World  world;
-  private final Vector camera;
+  private final Vector worldOrigin;
+  private final Vector worldLimit;
+  private final Vector worldTopLeft;
+  private final Vector worldBottomRight;
+  private final Vector screenTopLeft;
+  private final Vector screenBottomRight;
+  private final Vector limitedWorldTopLeft;
+  private final Vector limitedWorldBottomRight;
+  private final Vector limitedScreenTopLeft;
+  private final Vector limitedScreenBottomRight;
+
   private final Vector cursorOld;
   private final Vector cursorNew;
   private final Vector cursorMovement;
-  private final Vector screenTopLeft;
-  private final Vector screenBottomRight;
-
-  private final BufferedImage areaImage;
 
   private final Key panningKey;
 
-  private int   zoom;
-  private float scale;
+  private int zoom;
+  private int scale;
 
-  public GameInterface() throws IOException {
-    world             = new World();
-    camera            = new Vector();
-    cursorOld         = new Vector();
-    cursorNew         = new Vector();
-    cursorMovement    = new Vector();
-    screenTopLeft     = new Vector();
-    screenBottomRight = new Vector();
+  public GameInterface() {
+    world       = new World();
+    worldOrigin = new Vector();
+    worldLimit  = new Vector().set(world.getWidth(), world.getHeight());
 
-    areaImage = ImageIO.read(GameInterface.class.getResource("tile.png"));
+    worldTopLeft             = new Vector();
+    worldBottomRight         = new Vector();
+    screenTopLeft            = new Vector();
+    screenBottomRight        = new Vector();
+    limitedWorldTopLeft      = new Vector();
+    limitedWorldBottomRight  = new Vector();
+    limitedScreenTopLeft     = new Vector();
+    limitedScreenBottomRight = new Vector();
+
+    cursorOld      = new Vector();
+    cursorNew      = new Vector();
+    cursorMovement = new Vector();
 
     final var input = Main.getKurulus().getInput();
     panningKey = input.getMouseKey(MouseEvent.BUTTON2);
@@ -51,33 +61,51 @@ public final class GameInterface implements UserInterface {
       zoom += Main.getKurulus().getInput().getWheelRotation();
       calculateScale();
       calculateCursorCoordinate(cursorNew);
-      camera.add(cursorOld).sub(cursorNew);
+      worldTopLeft.add(cursorOld).sub(cursorNew);
     }
 
     if (panningKey.isDown()) {
       cursorMovement.set(Main.getKurulus().getInput().getCursorMovement());
-      camera.sub(cursorMovement.div(scale));
+      worldTopLeft.sub(cursorMovement.div(scale));
     }
+
+    translateToScreenSpace(screenTopLeft.set(worldTopLeft));
+    screenBottomRight.set(screenTopLeft).add(Kurulus.WINDOW_SIZE);
+    translateToWorldSpace(worldBottomRight.set(screenBottomRight));
+
+    limitedWorldTopLeft.set(worldTopLeft).floor().max(worldOrigin);
+    limitedWorldBottomRight.set(worldBottomRight).ceil().min(worldLimit);
+    translateToScreenSpace(limitedScreenTopLeft.set(limitedWorldTopLeft));
+    translateToScreenSpace(
+      limitedScreenBottomRight.set(limitedWorldBottomRight));
   }
 
   @Override public void render() {
-    translateToWorldSpace(screenTopLeft.set(0, 0)).floor();
-    translateToWorldSpace(
-      screenBottomRight.set(Kurulus.WINDOW_WIDTH, Kurulus.WINDOW_HEIGHT))
-      .floor();
+    final var renderer = Main.getKurulus().getRenderer();
 
-    final var minX = (int) Math.max(0, screenTopLeft.x);
-    final var maxX = (int) Math.min(world.getWidth() - 1, screenBottomRight.x);
-    final var minY = (int) Math.max(0, screenTopLeft.y);
-    final var maxY = (int) Math.min(world.getHeight() - 1, screenBottomRight.y);
-
-    for (var x = minX; x <= maxX; x++) {
-      for (var y = minY; y <= maxY; y++) {
+    for (var x = limitedWorldTopLeft.x; x < limitedWorldBottomRight.x; x++) {
+      for (var y = limitedWorldTopLeft.y; y < limitedWorldBottomRight.y; y++) {
+        final var area       =
+          world.getArea((int) (x + 0.5f), (int) (y + 0.5f));
         final var coordinate = new Vector().set(x, y);
         translateToScreenSpace(coordinate);
-        Main.getKurulus().getRenderer().drawImage(coordinate.x, coordinate.y,
-          scale, areaImage);
+        renderer.fillSquare(coordinate.x, coordinate.y, scale,
+          area.terrain.color);
       }
+    }
+
+    for (var x = limitedWorldTopLeft.x; x <= limitedWorldBottomRight.x; x++) {
+      final var screenX = (x - worldTopLeft.x) * scale;
+      renderer.drawLine(screenX, limitedScreenTopLeft.y, screenX,
+        limitedScreenBottomRight.y, Kurulus.MAP_GRID_STROKE,
+        Kurulus.MAP_GRID_COLOR);
+    }
+
+    for (var y = limitedWorldTopLeft.y; y <= limitedWorldBottomRight.y; y++) {
+      final var screenY = (y - worldTopLeft.y) * scale;
+      renderer.drawLine(limitedScreenTopLeft.x, screenY,
+        limitedScreenBottomRight.x, screenY, Kurulus.MAP_GRID_STROKE,
+        Kurulus.MAP_GRID_COLOR);
     }
   }
 
@@ -87,16 +115,16 @@ public final class GameInterface implements UserInterface {
   }
 
   private Vector translateToWorldSpace(Vector screenCoordinate) {
-    return screenCoordinate.div(scale).add(camera);
+    return screenCoordinate.div(scale).add(worldTopLeft);
   }
 
   private Vector translateToScreenSpace(Vector worldCoordinate) {
-    return worldCoordinate.sub(camera).mul(scale);
+    return worldCoordinate.sub(worldTopLeft).mul(scale);
   }
 
   private void calculateScale() {
     if (zoom < Kurulus.MINIMUM_ZOOM) { zoom = Kurulus.MINIMUM_ZOOM; }
     if (zoom > Kurulus.MAXIMUM_ZOOM) { zoom = Kurulus.MAXIMUM_ZOOM; }
-    scale = (float) Math.pow(Kurulus.SCALE_BASE, zoom);
+    scale = (int) (Math.pow(Kurulus.SCALE_BASE, zoom) + 0.5);
   }
 }
