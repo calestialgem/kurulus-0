@@ -16,6 +16,8 @@ public class Vector {
     return this;
   }
 
+  public Vector copy() { return new Vector().set(this); }
+
   public Vector add(Vector a) {
     this.x += a.x;
     this.y += a.y;

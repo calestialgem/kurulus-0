@@ -27,7 +27,7 @@ public final class Kurulus {
   public static final float SCALE_BASE   = 1.2f;
   public static final int   MINIMUM_ZOOM = 10;
   public static final int   INITIAL_ZOOM = 15;
-  public static final int   MAXIMUM_ZOOM = 20;
+  public static final int   MAXIMUM_ZOOM = 25;
 
   public static final Font  DEBUG_FONT       = new Font("Hack", Font.PLAIN, 10);
   public static final Color DEBUG_FOREGROUND = new Color(1f, 1f, 1f);
