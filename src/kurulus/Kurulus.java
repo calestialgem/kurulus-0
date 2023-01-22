@@ -26,7 +26,14 @@ public final class Kurulus {
 
   public static final double TICK_RATE = 100;
 
-  public static final int WORLD_SIZE = 100;
+  public static final int      WORLD_SIZE                  = 100;
+  public static final double[] TERRAIN_ALTITUDE_BOUNDARIES =
+    new double[] { 10, 3, 0.15, 0, -0.15 };
+  public static final double   NUCLEI_FRACTION             = 0.05;
+  public static final double   MIN_NUCLEUS_ALTITUDE        = 8;
+  public static final double   MAX_NUCLEUS_ALTITUDE        = 30;
+  public static final double   ALTITUDE_DROP_BALANCE       = 5;
+  public static final double   ALTITUDE_DROP_MAGNITUDE     = 1;
 
   public static final double SCALE_BASE   = 1.2;
   public static final int    MINIMUM_ZOOM = 10;
