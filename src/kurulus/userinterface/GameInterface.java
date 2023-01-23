@@ -9,10 +9,8 @@ import kurulus.display.input.Key;
 import kurulus.world.World;
 
 public final class GameInterface implements UserInterface {
-  private final World  world;
-  private final Vector worldOrigin;
-  private final Vector worldLimit;
-  private final Key    panningKey;
+  private final World world;
+  private final Key   panningKey;
 
   private Vector worldTopLeft;
   private Vector worldBottomRight;
@@ -26,11 +24,9 @@ public final class GameInterface implements UserInterface {
   private int zoom;
   private int scale;
 
-  public GameInterface() {
-    world       = new World();
-    worldOrigin = new Vector();
-    worldLimit  = new Vector(world.getWidth(), world.getHeight());
-    panningKey  = Main.getKurulus().getInput().getMouseKey(MouseEvent.BUTTON2);
+  public GameInterface(World world) {
+    this.world = world;
+    panningKey = Main.getKurulus().getInput().getMouseKey(MouseEvent.BUTTON2);
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();
@@ -64,8 +60,8 @@ public final class GameInterface implements UserInterface {
     screenBottomRight = screenTopLeft.add(Kurulus.WINDOW_SIZE);
     worldBottomRight  = translateToWorldSpace(screenBottomRight);
 
-    limitedWorldTopLeft      = worldTopLeft.floor().max(worldOrigin);
-    limitedWorldBottomRight  = worldBottomRight.ceil().min(worldLimit);
+    limitedWorldTopLeft      = worldTopLeft.floor().max(new Vector());
+    limitedWorldBottomRight  = worldBottomRight.ceil().min(world.getSize());
     limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
     limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
   }
@@ -73,28 +69,27 @@ public final class GameInterface implements UserInterface {
   @Override public void render() {
     final var renderer = Main.getKurulus().getRenderer();
 
-    for (var x = limitedWorldTopLeft.x(); x < limitedWorldBottomRight.x();
+    for (var x = limitedWorldTopLeft.getX(); x < limitedWorldBottomRight.getX();
       x++) {
-      for (var y = limitedWorldTopLeft.y(); y < limitedWorldBottomRight.y();
-        y++) {
-        final var area       =
-          world.getArea((int) (x + 0.5f), (int) (y + 0.5f));
-        final var coordinate = translateToScreenSpace(new Vector(x, y));
-        renderer.fillSquare(coordinate.x(), coordinate.y(), scale,
-          area.terrain.color);
+      for (var y = limitedWorldTopLeft.getY();
+        y < limitedWorldBottomRight.getY(); y++) {
+        final var worldCoordinate  = new Vector(x, y);
+        final var screenCoordinate = translateToScreenSpace(worldCoordinate);
+        renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
+          world.getArea(worldCoordinate).terrain().color());
       }
     }
 
-    for (var x = limitedWorldTopLeft.x(); x <= limitedWorldBottomRight.x();
-      x++) {
+    for (var x = limitedWorldTopLeft.getX();
+      x <= limitedWorldBottomRight.getX(); x++) {
       final var screenX = (x - worldTopLeft.x()) * scale;
       renderer.drawLine(screenX, limitedScreenTopLeft.y(), screenX,
         limitedScreenBottomRight.y(), Kurulus.MAP_GRID_STROKE,
         Kurulus.MAP_GRID_COLOR);
     }
 
-    for (var y = limitedWorldTopLeft.y(); y <= limitedWorldBottomRight.y();
-      y++) {
+    for (var y = limitedWorldTopLeft.getY();
+      y <= limitedWorldBottomRight.getY(); y++) {
       final var screenY = (y - worldTopLeft.y()) * scale;
       renderer.drawLine(limitedScreenTopLeft.x(), screenY,
         limitedScreenBottomRight.x(), screenY, Kurulus.MAP_GRID_STROKE,

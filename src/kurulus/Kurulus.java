@@ -5,12 +5,15 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Stroke;
 import java.awt.event.KeyEvent;
+import java.util.Random;
 
 import kurulus.display.Display;
 import kurulus.display.Renderer;
 import kurulus.display.input.Input;
 import kurulus.userinterface.GameInterface;
 import kurulus.userinterface.UserInterface;
+import kurulus.world.Generator;
+import kurulus.world.Terrain;
 
 public final class Kurulus {
   public static final int    MAJOR_VERSION = 0;
@@ -26,7 +29,8 @@ public final class Kurulus {
 
   public static final double TICK_RATE = 100;
 
-  public static final int      WORLD_SIZE                  = 100;
+  public static final Vector   WORLD_SIZE                  =
+    new Vector(100, 100);
   public static final double[] TERRAIN_ALTITUDE_BOUNDARIES =
     new double[] { 10, 3, 0.15, 0, -0.15 };
   public static final double   NUCLEI_FRACTION             = 0.05;
@@ -69,7 +73,17 @@ public final class Kurulus {
       realFrameRate    = 0;
       unprocessedTicks = 0;
       currentTick      = -1;
-      userInterface    = new GameInterface();
+
+      final var generator = new Generator(WORLD_SIZE,
+        new Terrain[] { new Terrain(Color.RED.darker()),
+          new Terrain(Color.YELLOW.darker()), new Terrain(Color.GREEN.darker()),
+          new Terrain(Color.YELLOW.brighter()),
+          new Terrain(Color.BLUE.brighter()), new Terrain(Color.BLUE),
+          new Terrain(Color.BLUE.darker()) },
+        TERRAIN_ALTITUDE_BOUNDARIES, NUCLEI_FRACTION, MIN_NUCLEUS_ALTITUDE,
+        MAX_NUCLEUS_ALTITUDE, ALTITUDE_DROP_BALANCE, ALTITUDE_DROP_MAGNITUDE);
+
+      userInterface = new GameInterface(generator.generate(new Random()));
 
       final var escape = input.getKeyboardKey(KeyEvent.VK_ESCAPE);
 
