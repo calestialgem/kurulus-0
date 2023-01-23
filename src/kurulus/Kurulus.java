@@ -22,7 +22,7 @@ public final class Kurulus {
   public static final int    WINDOW_WIDTH  = 1280;
   public static final int    WINDOW_HEIGHT = 720;
   public static final Vector WINDOW_SIZE   =
-    new Vector().set(WINDOW_WIDTH, WINDOW_HEIGHT);
+    new Vector(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   public static final double TICK_RATE = 100;
 
@@ -102,8 +102,8 @@ public final class Kurulus {
             "tick %d".formatted(currentTick),
             "ups %.0f".formatted(realTickRate),
             "fps %.0f".formatted(realFrameRate),
-            "cursor: (%.0f, %.0f)".formatted(input.getCursorPosition().x,
-              input.getCursorPosition().y));
+            "cursor: (%.0f, %.0f)".formatted(input.getCursorPosition().x(),
+              input.getCursorPosition().y()));
           display.draw();
           frames++;
         }

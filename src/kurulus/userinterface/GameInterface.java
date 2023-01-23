@@ -12,20 +12,16 @@ public final class GameInterface implements UserInterface {
   private final World  world;
   private final Vector worldOrigin;
   private final Vector worldLimit;
-  private final Vector worldTopLeft;
-  private final Vector worldBottomRight;
-  private final Vector screenTopLeft;
-  private final Vector screenBottomRight;
-  private final Vector limitedWorldTopLeft;
-  private final Vector limitedWorldBottomRight;
-  private final Vector limitedScreenTopLeft;
-  private final Vector limitedScreenBottomRight;
+  private final Key    panningKey;
 
-  private final Vector cursorOld;
-  private final Vector cursorNew;
-  private final Vector cursorMovement;
-
-  private final Key panningKey;
+  private Vector worldTopLeft;
+  private Vector worldBottomRight;
+  private Vector screenTopLeft;
+  private Vector screenBottomRight;
+  private Vector limitedWorldTopLeft;
+  private Vector limitedWorldBottomRight;
+  private Vector limitedScreenTopLeft;
+  private Vector limitedScreenBottomRight;
 
   private int zoom;
   private int scale;
@@ -33,7 +29,8 @@ public final class GameInterface implements UserInterface {
   public GameInterface() {
     world       = new World();
     worldOrigin = new Vector();
-    worldLimit  = new Vector().set(world.getWidth(), world.getHeight());
+    worldLimit  = new Vector(world.getWidth(), world.getHeight());
+    panningKey  = Main.getKurulus().getInput().getMouseKey(MouseEvent.BUTTON2);
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();
@@ -44,74 +41,70 @@ public final class GameInterface implements UserInterface {
     limitedScreenTopLeft     = new Vector();
     limitedScreenBottomRight = new Vector();
 
-    cursorOld      = new Vector();
-    cursorNew      = new Vector();
-    cursorMovement = new Vector();
-
-    final var input = Main.getKurulus().getInput();
-    panningKey = input.getMouseKey(MouseEvent.BUTTON2);
-
     zoom = Kurulus.INITIAL_ZOOM;
     calculateScale();
   }
 
   @Override public void update() {
     {
-      calculateCursorCoordinate(cursorOld);
+      final var cursorOld = calculateCursorCoordinate();
       zoom += Main.getKurulus().getInput().getWheelRotation();
       calculateScale();
-      calculateCursorCoordinate(cursorNew);
-      worldTopLeft.add(cursorOld).sub(cursorNew);
+      final var cursorNew = calculateCursorCoordinate();
+      worldTopLeft = worldTopLeft.sub(cursorNew.sub(cursorOld));
     }
 
     if (panningKey.isDown()) {
-      cursorMovement.set(Main.getKurulus().getInput().getCursorMovement());
-      worldTopLeft.sub(cursorMovement.div(scale));
+      final var cursorMovement =
+        Main.getKurulus().getInput().getCursorMovement().div(scale);
+      worldTopLeft = worldTopLeft.sub(cursorMovement);
     }
 
-    translateToScreenSpace(screenTopLeft.set(worldTopLeft));
-    screenBottomRight.set(screenTopLeft).add(Kurulus.WINDOW_SIZE);
-    translateToWorldSpace(worldBottomRight.set(screenBottomRight));
+    screenTopLeft     = translateToScreenSpace(worldTopLeft);
+    screenBottomRight = screenTopLeft.add(Kurulus.WINDOW_SIZE);
+    worldBottomRight  = translateToWorldSpace(screenBottomRight);
 
-    limitedWorldTopLeft.set(worldTopLeft).floor().max(worldOrigin);
-    limitedWorldBottomRight.set(worldBottomRight).ceil().min(worldLimit);
-    translateToScreenSpace(limitedScreenTopLeft.set(limitedWorldTopLeft));
-    translateToScreenSpace(
-      limitedScreenBottomRight.set(limitedWorldBottomRight));
+    limitedWorldTopLeft      = worldTopLeft.floor().max(worldOrigin);
+    limitedWorldBottomRight  = worldBottomRight.ceil().min(worldLimit);
+    limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
+    limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
   }
 
   @Override public void render() {
     final var renderer = Main.getKurulus().getRenderer();
 
-    for (var x = limitedWorldTopLeft.x; x < limitedWorldBottomRight.x; x++) {
-      for (var y = limitedWorldTopLeft.y; y < limitedWorldBottomRight.y; y++) {
+    for (var x = limitedWorldTopLeft.x(); x < limitedWorldBottomRight.x();
+      x++) {
+      for (var y = limitedWorldTopLeft.y(); y < limitedWorldBottomRight.y();
+        y++) {
         final var area       =
           world.getArea((int) (x + 0.5f), (int) (y + 0.5f));
-        final var coordinate = new Vector().set(x, y);
-        translateToScreenSpace(coordinate);
-        renderer.fillSquare(coordinate.x, coordinate.y, scale,
+        final var coordinate = translateToScreenSpace(new Vector(x, y));
+        renderer.fillSquare(coordinate.x(), coordinate.y(), scale,
           area.terrain.color);
       }
     }
 
-    for (var x = limitedWorldTopLeft.x; x <= limitedWorldBottomRight.x; x++) {
-      final var screenX = (x - worldTopLeft.x) * scale;
-      renderer.drawLine(screenX, limitedScreenTopLeft.y, screenX,
-        limitedScreenBottomRight.y, Kurulus.MAP_GRID_STROKE,
+    for (var x = limitedWorldTopLeft.x(); x <= limitedWorldBottomRight.x();
+      x++) {
+      final var screenX = (x - worldTopLeft.x()) * scale;
+      renderer.drawLine(screenX, limitedScreenTopLeft.y(), screenX,
+        limitedScreenBottomRight.y(), Kurulus.MAP_GRID_STROKE,
         Kurulus.MAP_GRID_COLOR);
     }
 
-    for (var y = limitedWorldTopLeft.y; y <= limitedWorldBottomRight.y; y++) {
-      final var screenY = (y - worldTopLeft.y) * scale;
-      renderer.drawLine(limitedScreenTopLeft.x, screenY,
-        limitedScreenBottomRight.x, screenY, Kurulus.MAP_GRID_STROKE,
+    for (var y = limitedWorldTopLeft.y(); y <= limitedWorldBottomRight.y();
+      y++) {
+      final var screenY = (y - worldTopLeft.y()) * scale;
+      renderer.drawLine(limitedScreenTopLeft.x(), screenY,
+        limitedScreenBottomRight.x(), screenY, Kurulus.MAP_GRID_STROKE,
         Kurulus.MAP_GRID_COLOR);
     }
   }
 
-  private Vector calculateCursorCoordinate(Vector vector) {
+  private Vector calculateCursorCoordinate() {
     return translateToWorldSpace(
-      vector.set(Main.getKurulus().getInput().getCursorPosition()));
+      Main.getKurulus().getInput().getCursorPosition());
   }
 
   private Vector translateToWorldSpace(Vector screenCoordinate) {

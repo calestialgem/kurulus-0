@@ -1,68 +1,29 @@
 package kurulus;
 
-public class Vector {
-  public float x;
-  public float y;
+public record Vector(float x, float y) {
+  public Vector() { this(0, 0); }
 
-  public Vector set(float x, float y) {
-    this.x = x;
-    this.y = y;
-    return this;
+  public Vector add(Vector other) {
+    return new Vector(x + other.x, y + other.y);
+  }
+  public Vector sub(Vector other) {
+    return new Vector(x - other.x, y - other.y);
   }
 
-  public Vector set(Vector a) {
-    x = a.x;
-    y = a.y;
-    return this;
-  }
-
-  public Vector copy() { return new Vector().set(this); }
-
-  public Vector add(Vector a) {
-    x += a.x;
-    y += a.y;
-    return this;
-  }
-
-  public Vector sub(Vector a) {
-    x -= a.x;
-    y -= a.y;
-    return this;
-  }
-
-  public Vector mul(float s) {
-    x *= s;
-    y *= s;
-    return this;
-  }
-
-  public Vector div(float s) {
-    x /= s;
-    y /= s;
-    return this;
-  }
+  public Vector mul(float scalar) { return new Vector(x * scalar, y * scalar); }
+  public Vector div(float scalar) { return new Vector(x / scalar, y / scalar); }
 
   public Vector ceil() {
-    x = (float) Math.ceil(x);
-    y = (float) Math.ceil(y);
-    return this;
+    return new Vector((float) Math.ceil(x), (float) Math.ceil(y));
   }
-
   public Vector floor() {
-    x = (float) Math.floor(x);
-    y = (float) Math.floor(y);
-    return this;
+    return new Vector((float) Math.floor(x), (float) Math.floor(y));
   }
 
-  public Vector max(Vector a) {
-    x = Math.max(x, a.x);
-    y = Math.max(y, a.y);
-    return this;
+  public Vector max(Vector other) {
+    return new Vector(Math.max(x, other.x), Math.max(y, other.y));
   }
-
-  public Vector min(Vector a) {
-    x = Math.min(x, a.x);
-    y = Math.min(y, a.y);
-    return this;
+  public Vector min(Vector other) {
+    return new Vector(Math.min(x, other.x), Math.min(y, other.y));
   }
 }

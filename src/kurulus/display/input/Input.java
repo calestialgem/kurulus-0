@@ -23,18 +23,19 @@ public final class Input
   KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
   private final Map<Integer, Key> keyboardKeys;
   private final Map<Integer, Key> mouseKeys;
-  private final Vector            cursorPreviousPosition;
-  private final Vector            cursorPosition;
-  private final Vector            cursorMovement;
 
+  private Vector  cursorPreviousPosition;
+  private Vector  cursorPosition;
+  private Vector  cursorMovement;
   private int     wheelPreviousRotation;
   private int     wheelAccumulatedRotation;
   private boolean windowClosing;
   private boolean windowActive;
 
   public Input(Window window, Component content) {
-    keyboardKeys             = new HashMap<>();
-    mouseKeys                = new HashMap<>();
+    keyboardKeys = new HashMap<>();
+    mouseKeys    = new HashMap<>();
+
     cursorPreviousPosition   = new Vector();
     cursorPosition           = new Vector();
     cursorMovement           = new Vector();
@@ -71,8 +72,10 @@ public final class Input
   public void update() {
     for (final var key : keyboardKeys.values()) { key.update(); }
     for (final var key : mouseKeys.values()) { key.update(); }
-    cursorMovement.set(cursorPosition).sub(cursorPreviousPosition);
-    cursorPreviousPosition.set(cursorPosition);
+
+    cursorMovement         = cursorPosition.sub(cursorPreviousPosition);
+    cursorPreviousPosition = cursorPosition;
+
     wheelPreviousRotation    = wheelAccumulatedRotation;
     wheelAccumulatedRotation = 0;
   }
@@ -116,10 +119,10 @@ public final class Input
     mouseKeys.get(event.getButton()).setDown(false);
   }
   @Override public void mouseDragged(MouseEvent event) {
-    cursorPosition.set(event.getX(), event.getY());
+    cursorPosition = new Vector(event.getX(), event.getY());
   }
   @Override public void mouseMoved(MouseEvent event) {
-    cursorPosition.set(event.getX(), event.getY());
+    cursorPosition = new Vector(event.getX(), event.getY());
   }
   @Override public void mouseWheelMoved(MouseWheelEvent event) {
     wheelAccumulatedRotation += event.getWheelRotation();
