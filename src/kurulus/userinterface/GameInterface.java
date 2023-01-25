@@ -6,7 +6,7 @@ import kurulus.Kurulus;
 import kurulus.Main;
 import kurulus.Vector;
 import kurulus.display.input.Key;
-import kurulus.world.World;
+import kurulus.game.world.World;
 
 public final class GameInterface implements UserInterface {
   private final World world;
