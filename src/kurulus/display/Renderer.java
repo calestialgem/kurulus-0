@@ -64,6 +64,14 @@ public final class Renderer {
       (int) (size + 0.5f));
   }
 
+  public void drawSquare(float x, float y, float size, Stroke stroke,
+    Color color) {
+    graphics.setColor(color);
+    graphics.setStroke(stroke);
+    graphics.drawRect((int) (x + 0.5f), (int) (y + 0.5f), (int) (size + 0.5f),
+      (int) (size + 0.5f));
+  }
+
   public void drawLine(float startX, float startY, float endX, float endY,
     Stroke stroke, Color color) {
     graphics.setColor(color);

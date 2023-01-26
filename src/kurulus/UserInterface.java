@@ -1,14 +1,17 @@
 package kurulus;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.Optional;
 
 import kurulus.display.Renderer;
 import kurulus.display.input.Key;
 import kurulus.game.Date;
 import kurulus.game.Game;
+import kurulus.game.world.Area;
 import kurulus.game.world.World;
 
 public final class UserInterface {
@@ -16,6 +19,7 @@ public final class UserInterface {
     Kurulus.convertSecondsToTicks(1), Kurulus.convertSecondsToTicks(0.1), 1 };
 
   private final Key panningKey;
+  private final Key selectingKey;
   private final Key pausingKey;
   private final Key speedingUpKey;
   private final Key speedingDownKey;
@@ -31,6 +35,9 @@ public final class UserInterface {
   private Vector limitedScreenTopLeft;
   private Vector limitedScreenBottomRight;
 
+  private Optional<Area> hoveredArea;
+  private Optional<Area> selectedArea;
+
   private int zoom;
   private int scale;
 
@@ -41,6 +48,7 @@ public final class UserInterface {
   public UserInterface(World world) {
     final var input = Main.getKurulus().getInput();
     panningKey      = input.getMouseKey(MouseEvent.BUTTON2);
+    selectingKey    = input.getMouseKey(MouseEvent.BUTTON1);
     pausingKey      = input.getKeyboardKey(KeyEvent.VK_SPACE);
     speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
@@ -55,6 +63,9 @@ public final class UserInterface {
     limitedWorldBottomRight  = new Vector();
     limitedScreenTopLeft     = new Vector();
     limitedScreenBottomRight = new Vector();
+
+    hoveredArea  = Optional.empty();
+    selectedArea = Optional.empty();
 
     zoom = Kurulus.INITIAL_ZOOM;
     calculateScale();
@@ -90,6 +101,22 @@ public final class UserInterface {
     limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
     limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
 
+    final var cursorWorld = calculateCursorCoordinate();
+    if (cursorWorld.x() > limitedWorldTopLeft.x()
+      && cursorWorld.y() > limitedWorldTopLeft.y()
+      && cursorWorld.x() < limitedWorldBottomRight.x()
+      && cursorWorld.y() < limitedWorldBottomRight.y()) {
+      hoveredArea = Optional.of(game.world().getArea(cursorWorld.floor()));
+    } else {
+      hoveredArea = Optional.empty();
+    }
+
+    if (Main.getKurulus().getInput().isWindowActive() && hoveredArea.isPresent()
+      && selectingKey.isPressed()) {
+      selectedArea = hoveredArea;
+      hoveredArea  = Optional.empty();
+    }
+
     if (pausingKey.isPressed()) {
       paused = !paused;
       if (paused) { resetDayCounter(); }
@@ -115,8 +142,6 @@ public final class UserInterface {
       }
     }
   }
-
-  private void resetDayCounter() { dayCounter = DAY_LENGTHS[speed]; }
 
   public void render() {
     final var renderer = Main.getKurulus().getRenderer();
@@ -146,6 +171,28 @@ public final class UserInterface {
       renderer.drawLine(limitedScreenTopLeft.x(), screenY,
         limitedScreenBottomRight.x(), screenY, Kurulus.MAP_GRID_STROKE,
         Kurulus.MAP_GRID_COLOR);
+    }
+
+    final var outlineThickness = Math.max(1, Math.round(scale * 0.02f));
+    final var outlineSize      = Math.max(1, scale - outlineThickness * 2);
+    if (hoveredArea.isPresent()) {
+      final var screen = translateToScreenSpace(hoveredArea.get().coordinate());
+      renderer.drawSquare(screen.x() + outlineThickness,
+        screen.y() + outlineThickness, outlineSize,
+        new BasicStroke(outlineThickness * 2),
+        Kurulus.HOVERED_AREA_OUTLINE_COLOR);
+    }
+
+    if (selectedArea.isPresent()) {
+      final var screen =
+        translateToScreenSpace(selectedArea.get().coordinate());
+      renderer.drawSquare(
+        screen.x() + outlineThickness, screen.y() + outlineThickness,
+        outlineSize, new BasicStroke(outlineThickness * 2,
+          BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 1,
+          new float[] { outlineSize / 5f }, Main.getKurulus().getCurrentTick()
+            / (float) Kurulus.TICK_RATE * outlineSize),
+        Kurulus.SELECTED_AREA_OUTLINE_COLOR);
     }
 
     renderer.write(Kurulus.WINDOW_WIDTH - 5, 5, Color.WHITE, Color.BLACK,
@@ -179,4 +226,6 @@ public final class UserInterface {
     if (zoom > Kurulus.MAXIMUM_ZOOM) { zoom = Kurulus.MAXIMUM_ZOOM; }
     scale = (int) (Math.pow(Kurulus.SCALE_BASE, zoom) + 0.5);
   }
+
+  private void resetDayCounter() { dayCounter = DAY_LENGTHS[speed]; }
 }

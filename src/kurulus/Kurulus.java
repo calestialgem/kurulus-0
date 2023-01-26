@@ -49,6 +49,9 @@ public final class Kurulus {
   public static final Color  MAP_GRID_COLOR  = new Color(1f, 1f, 1f);
   public static final Stroke MAP_GRID_STROKE = new BasicStroke(1f);
 
+  public static final Color HOVERED_AREA_OUTLINE_COLOR  = new Color(1f, 1f, 1f);
+  public static final Color SELECTED_AREA_OUTLINE_COLOR = new Color(0f, 0f, 0f);
+
   public static int convertSecondsToTicks(double seconds) {
     return (int) (seconds * TICK_RATE + 0.5);
   }
