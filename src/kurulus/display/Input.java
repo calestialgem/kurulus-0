@@ -21,6 +21,21 @@ import kurulus.Vector;
 public final class Input
   implements WindowListener, WindowFocusListener, WindowStateListener,
   KeyListener, MouseListener, MouseMotionListener, MouseWheelListener {
+  static Input init(Window window, Component content) {
+    final var input = new Input(new HashMap<>(), new HashMap<>(), new Vector(),
+      new Vector(), new Vector(), 0, 0, false, false);
+
+    window.addWindowListener(input);
+    window.addWindowFocusListener(input);
+    window.addWindowStateListener(input);
+    content.addKeyListener(input);
+    content.addMouseListener(input);
+    content.addMouseMotionListener(input);
+    content.addMouseWheelListener(input);
+
+    return input;
+  }
+
   private final Map<Integer, Key> keyboardKeys;
   private final Map<Integer, Key> mouseKeys;
 
@@ -32,25 +47,19 @@ public final class Input
   private boolean windowClosing;
   private boolean windowActive;
 
-  public Input(Window window, Component content) {
-    keyboardKeys = new HashMap<>();
-    mouseKeys    = new HashMap<>();
-
-    cursorPreviousPosition   = new Vector();
-    cursorPosition           = new Vector();
-    cursorMovement           = new Vector();
-    wheelPreviousRotation    = 0;
-    wheelAccumulatedRotation = 0;
-    windowClosing            = false;
-    windowActive             = false;
-
-    window.addWindowListener(this);
-    window.addWindowFocusListener(this);
-    window.addWindowStateListener(this);
-    content.addKeyListener(this);
-    content.addMouseListener(this);
-    content.addMouseMotionListener(this);
-    content.addMouseWheelListener(this);
+  private Input(Map<Integer, Key> keyboardKeys, Map<Integer, Key> mouseKeys,
+    Vector cursorPreviousPosition, Vector cursorPosition, Vector cursorMovement,
+    int wheelPreviousRotation, int wheelAccumulatedRotation,
+    boolean windowClosing, boolean windowActive) {
+    this.keyboardKeys             = keyboardKeys;
+    this.mouseKeys                = mouseKeys;
+    this.cursorPreviousPosition   = cursorPreviousPosition;
+    this.cursorPosition           = cursorPosition;
+    this.cursorMovement           = cursorMovement;
+    this.wheelPreviousRotation    = wheelPreviousRotation;
+    this.wheelAccumulatedRotation = wheelAccumulatedRotation;
+    this.windowClosing            = windowClosing;
+    this.windowActive             = windowActive;
   }
 
   public Key getKeyboardKey(int code) {

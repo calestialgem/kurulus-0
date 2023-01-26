@@ -48,7 +48,7 @@ public final class Display {
     frame.dispose();
   }
 
-  public Input createInput() { return new Input(frame, canvas); }
+  public Input createInput() { return Input.init(frame, canvas); }
 
   public Renderer createRenderer() {
     final var graphics =
