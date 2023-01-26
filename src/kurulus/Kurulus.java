@@ -68,7 +68,10 @@ public final class Kurulus {
   private long          currentTick;
   private UserInterface userInterface;
 
-  Kurulus() { display = new Display(); }
+  Kurulus() {
+    display = Display.init(WINDOW_WIDTH, WINDOW_HEIGHT,
+      "Kuruluş %s".formatted(VERSION), new Color(44, 116, 179));
+  }
 
   public void run() {
     try {
