@@ -20,7 +20,8 @@ public final class UserInterface {
   private static final Font USERINTERFACE_FONT =
     new Font("Inter", Font.PLAIN, 20);
 
-  private final Game game;
+  private final Game  game;
+  private final State controlled;
 
   private final Key panningKey;
   private final Key selectingKey;
@@ -28,8 +29,6 @@ public final class UserInterface {
   private final Key speedingUpKey;
   private final Key speedingDownKey;
   private final Key settlingKey;
-
-  private State controlled;
 
   private Vector worldTopLeft;
   private Vector worldBottomRight;
@@ -50,8 +49,9 @@ public final class UserInterface {
   private int     dayCounter;
   private boolean paused;
 
-  public UserInterface(Game game) {
-    this.game = game;
+  public UserInterface(Game game, State controlled) {
+    this.game       = game;
+    this.controlled = controlled;
 
     final var input = Main.getKurulus().getInput();
     panningKey      = input.getMouseKey(MouseEvent.BUTTON2);
@@ -60,8 +60,6 @@ public final class UserInterface {
     speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
     settlingKey     = input.getKeyboardKey(KeyEvent.VK_S);
-
-    controlled = game.createState("Republic of Turkey", Color.RED);
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();

@@ -80,7 +80,7 @@ public final class Kurulus {
       unprocessedTicks = 0;
       currentTick      = -1;
 
-      final var generator = new Generator(WORLD_SIZE,
+      final var generator  = new Generator(WORLD_SIZE,
         new Terrain[] { new Terrain(Color.RED.darker(), true),
           new Terrain(Color.YELLOW.darker(), true),
           new Terrain(Color.GREEN.darker(), true),
@@ -88,9 +88,17 @@ public final class Kurulus {
           new Terrain(Color.BLUE.darker(), false) },
         TERRAIN_ALTITUDE_BOUNDARIES, NUCLEI_FRACTION, MIN_NUCLEUS_ALTITUDE,
         MAX_NUCLEUS_ALTITUDE, ALTITUDE_DROP_BALANCE, ALTITUDE_DROP_MAGNITUDE);
+      final var rng        = new Random();
+      final var game       = new Game(generator.generate(rng), rng);
+      final var controlled = game.createState("Turkey", Color.RED);
 
-      userInterface =
-        new UserInterface(new Game(generator.generate(new Random())));
+      game.createOpponent("USA", Color.BLUE);
+      game.createOpponent("Germany", Color.GRAY);
+      game.createOpponent("France", Color.WHITE);
+      game.createOpponent("China", Color.YELLOW);
+      game.createOpponent("Australia", Color.GREEN);
+
+      userInterface = new UserInterface(game, controlled);
 
       final var escape = input.getKeyboardKey(KeyEvent.VK_ESCAPE);
 

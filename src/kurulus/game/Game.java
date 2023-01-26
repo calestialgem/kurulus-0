@@ -7,30 +7,43 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import kurulus.Vector;
 import kurulus.game.world.World;
 
 public final class Game {
-  public final World world;
+  public final World  world;
+  public final Random rng;
 
   private final List<State>                  states;
+  private final Map<State, Opponent>         opponents;
   private final Map<State, List<Settlement>> owners;
   private final Map<Vector, Settlement>      settlements;
 
   private Date date;
 
-  public Game(World world) {
+  public Game(World world, Random rng) {
     this.world = world;
+    this.rng   = rng;
 
     states      = new ArrayList<>();
+    opponents   = new HashMap<>();
     owners      = new HashMap<>();
     settlements = new HashMap<>();
 
     date = new Date(1, 1, 2200);
   }
 
-  public void simulateToday() { date = date.findNextDay(); }
+  public void simulateToday() {
+    for (final var opponent : opponents.values()) { opponent.update(this); }
+    date = date.findNextDay();
+  }
+
+  public void createOpponent(String name, Color color) {
+    final var state = createState(name, color);
+    opponents.put(state, new Opponent(state));
+  }
 
   public State createState(String name, Color color) {
     final var state = new State(name, color);
