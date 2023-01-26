@@ -63,12 +63,12 @@ public final class Input
   }
 
   public Key getKeyboardKey(int code) {
-    if (!keyboardKeys.containsKey(code)) { keyboardKeys.put(code, new Key()); }
+    if (!keyboardKeys.containsKey(code)) { keyboardKeys.put(code, Key.init()); }
     return keyboardKeys.get(code);
   }
 
   public Key getMouseKey(int code) {
-    if (!mouseKeys.containsKey(code)) { mouseKeys.put(code, new Key()); }
+    if (!mouseKeys.containsKey(code)) { mouseKeys.put(code, Key.init()); }
     return mouseKeys.get(code);
   }
 
