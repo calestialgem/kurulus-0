@@ -10,6 +10,7 @@ import java.util.Random;
 import kurulus.display.Display;
 import kurulus.display.Renderer;
 import kurulus.display.input.Input;
+import kurulus.game.Game;
 import kurulus.game.world.Generator;
 import kurulus.game.world.Terrain;
 
@@ -88,7 +89,8 @@ public final class Kurulus {
         TERRAIN_ALTITUDE_BOUNDARIES, NUCLEI_FRACTION, MIN_NUCLEUS_ALTITUDE,
         MAX_NUCLEUS_ALTITUDE, ALTITUDE_DROP_BALANCE, ALTITUDE_DROP_MAGNITUDE);
 
-      userInterface = new UserInterface(generator.generate(new Random()));
+      userInterface =
+        new UserInterface(new Game(generator.generate(new Random())));
 
       final var escape = input.getKeyboardKey(KeyEvent.VK_ESCAPE);
 

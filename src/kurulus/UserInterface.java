@@ -5,22 +5,18 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import kurulus.display.Renderer;
 import kurulus.display.input.Key;
-import kurulus.game.Date;
 import kurulus.game.Game;
-import kurulus.game.Settlement;
 import kurulus.game.world.Area;
-import kurulus.game.world.World;
 
 public final class UserInterface {
   private static final int[] DAY_LENGTHS = { Kurulus.convertSecondsToTicks(10),
     Kurulus.convertSecondsToTicks(1), Kurulus.convertSecondsToTicks(0.1), 1 };
+
+  private final Game game;
 
   private final Key panningKey;
   private final Key selectingKey;
@@ -28,8 +24,6 @@ public final class UserInterface {
   private final Key speedingUpKey;
   private final Key speedingDownKey;
   private final Key settlingKey;
-
-  private Game game;
 
   private Vector worldTopLeft;
   private Vector worldBottomRight;
@@ -50,7 +44,9 @@ public final class UserInterface {
   private int     dayCounter;
   private boolean paused;
 
-  public UserInterface(World world) {
+  public UserInterface(Game game) {
+    this.game = game;
+
     final var input = Main.getKurulus().getInput();
     panningKey      = input.getMouseKey(MouseEvent.BUTTON2);
     selectingKey    = input.getMouseKey(MouseEvent.BUTTON1);
@@ -58,8 +54,6 @@ public final class UserInterface {
     speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
     settlingKey     = input.getKeyboardKey(KeyEvent.VK_S);
-
-    game = new Game(world, new Date(1, 1, 2200), Map.of());
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();
@@ -103,7 +97,7 @@ public final class UserInterface {
 
     limitedWorldTopLeft      = worldTopLeft.floor().max(new Vector());
     limitedWorldBottomRight  =
-      worldBottomRight.ceil().min(game.world().getSize());
+      worldBottomRight.ceil().min(game.world.getSize());
     limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
     limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
 
@@ -112,7 +106,7 @@ public final class UserInterface {
       && cursorWorld.y() > limitedWorldTopLeft.y()
       && cursorWorld.x() < limitedWorldBottomRight.x()
       && cursorWorld.y() < limitedWorldBottomRight.y()) {
-      hoveredArea = Optional.of(game.world().getArea(cursorWorld.floor()));
+      hoveredArea = Optional.of(game.world.getArea(cursorWorld.floor()));
     } else {
       hoveredArea = Optional.empty();
     }
@@ -124,12 +118,7 @@ public final class UserInterface {
     }
 
     if (settlingKey.isPressed() && selectedArea.isPresent()
-      && selectedArea.get().terrain().land()
-      && !game.settlements().containsKey(selectedArea.get())) {
-      final var settlements = new HashMap<>(game.settlements());
-      settlements.put(selectedArea.get(), new Settlement(selectedArea.get()));
-      game         = new Game(game.world(), game.date(),
-        Collections.unmodifiableMap(settlements));
+      && game.settle(selectedArea.get())) {
       selectedArea = Optional.empty();
     }
 
@@ -154,7 +143,7 @@ public final class UserInterface {
       dayCounter--;
       if (dayCounter == 0) {
         resetDayCounter();
-        game = game.simulateToday();
+        game.simulateToday();
       }
     }
   }
@@ -169,7 +158,7 @@ public final class UserInterface {
         final var worldCoordinate  = new Vector(x, y);
         final var screenCoordinate = translateToScreenSpace(worldCoordinate);
         renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
-          game.world().getArea(worldCoordinate).terrain().color());
+          game.world.getArea(worldCoordinate).terrain().color());
       }
     }
 
@@ -189,7 +178,7 @@ public final class UserInterface {
         Kurulus.MAP_GRID_COLOR);
     }
 
-    for (final var settlement : game.settlements().values()) {
+    for (final var settlement : game.settlements.values()) {
       final var screenCoordinate =
         translateToScreenSpace(settlement.area().coordinate());
       final var size             = Math.max(3, scale * 0.2f);
@@ -221,8 +210,8 @@ public final class UserInterface {
 
     renderer.write(Kurulus.WINDOW_WIDTH - 5, 5, Color.WHITE, Color.BLACK,
       new Font("Inter", Font.PLAIN, 20), Renderer.HorizontalAlignment.RIGHT,
-      "%02d.%02d.%d".formatted(game.date().day(), game.date().month(),
-        game.date().year()),
+      "%02d.%02d.%d".formatted(game.getDate().day(), game.getDate().month(),
+        game.getDate().year()),
       "Speed: %d".formatted(speed + 1));
 
     if (paused) {
