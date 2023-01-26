@@ -7,8 +7,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.Optional;
 
+import kurulus.display.Key;
 import kurulus.display.Renderer;
-import kurulus.display.input.Key;
 import kurulus.game.Game;
 import kurulus.game.State;
 import kurulus.game.world.Area;

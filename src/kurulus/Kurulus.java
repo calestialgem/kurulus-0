@@ -8,8 +8,8 @@ import java.awt.event.KeyEvent;
 import java.util.Random;
 
 import kurulus.display.Display;
+import kurulus.display.Input;
 import kurulus.display.Renderer;
-import kurulus.display.input.Input;
 import kurulus.game.Game;
 import kurulus.game.world.Generator;
 import kurulus.game.world.Terrain;

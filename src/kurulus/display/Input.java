@@ -1,4 +1,4 @@
-package kurulus.display.input;
+package kurulus.display;
 
 import java.awt.Component;
 import java.awt.Window;

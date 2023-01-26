@@ -1,4 +1,4 @@
-package kurulus.display.input;
+package kurulus.display;
 
 public final class Key {
   private boolean previous;

@@ -9,7 +9,6 @@ import java.awt.RenderingHints;
 import javax.swing.JFrame;
 
 import kurulus.Kurulus;
-import kurulus.display.input.Input;
 
 public final class Display {
   private final Canvas canvas;
