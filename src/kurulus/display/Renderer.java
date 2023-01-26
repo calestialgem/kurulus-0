@@ -4,9 +4,11 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferStrategy;
 
 import kurulus.Kurulus;
 
@@ -18,9 +20,23 @@ public final class Renderer {
       new HorizontalAlignment(0.5f);
   }
 
+  static Renderer init(BufferStrategy bufferStrategy) {
+    final var renderer =
+      new Renderer((Graphics2D) bufferStrategy.getDrawGraphics());
+
+    renderer.graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
+    renderer.graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    renderer.graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
+      RenderingHints.VALUE_RENDER_QUALITY);
+
+    return renderer;
+  }
+
   private final Graphics2D graphics;
 
-  Renderer(Graphics2D graphics) { this.graphics = graphics; }
+  private Renderer(Graphics2D graphics) { this.graphics = graphics; }
 
   public float getHeight(Font font) {
     graphics.setFont(font);

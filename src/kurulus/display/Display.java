@@ -3,8 +3,6 @@ package kurulus.display;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 
 import javax.swing.JFrame;
 
@@ -51,14 +49,6 @@ public final class Display {
   public Input createInput() { return Input.init(frame, canvas); }
 
   public Renderer createRenderer() {
-    final var graphics =
-      (Graphics2D) canvas.getBufferStrategy().getDrawGraphics();
-    graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-      RenderingHints.VALUE_ANTIALIAS_ON);
-    graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-    graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
-      RenderingHints.VALUE_RENDER_QUALITY);
-    return new Renderer(graphics);
+    return Renderer.init(canvas.getBufferStrategy());
   }
 }
