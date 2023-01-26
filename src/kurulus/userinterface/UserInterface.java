@@ -1,12 +1,16 @@
-package kurulus;
+package kurulus.userinterface;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.List;
 import java.util.Optional;
 
+import kurulus.Kurulus;
+import kurulus.Main;
+import kurulus.Vector;
 import kurulus.display.Renderer;
 import kurulus.display.input.Key;
 import kurulus.game.Date;
@@ -26,20 +30,15 @@ public final class UserInterface {
 
   private Game game;
 
-  private Vector worldTopLeft;
-  private Vector worldBottomRight;
-  private Vector screenTopLeft;
-  private Vector screenBottomRight;
-  private Vector limitedWorldTopLeft;
-  private Vector limitedWorldBottomRight;
-  private Vector limitedScreenTopLeft;
-  private Vector limitedScreenBottomRight;
+  private ProjectedRectangle visibleRectangle;
+  private ProjectedRectangle boundedRectangle;
 
   private Optional<Area> hoveredArea;
   private Optional<Area> selectedArea;
 
-  private int zoom;
-  private int scale;
+  private Vector camera;
+  private int    zoom;
+  private int    scale;
 
   private int     speed;
   private int     dayCounter;
@@ -53,21 +52,16 @@ public final class UserInterface {
     speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
 
-    game = new Game(world, new Date(1, 1, 2200));
+    game = new Game(world, new Date(1, 1, 2200), List.of());
 
-    worldTopLeft             = new Vector();
-    worldBottomRight         = new Vector();
-    screenTopLeft            = new Vector();
-    screenBottomRight        = new Vector();
-    limitedWorldTopLeft      = new Vector();
-    limitedWorldBottomRight  = new Vector();
-    limitedScreenTopLeft     = new Vector();
-    limitedScreenBottomRight = new Vector();
+    visibleRectangle = new ProjectedRectangle();
+    boundedRectangle = new ProjectedRectangle();
 
     hoveredArea  = Optional.empty();
     selectedArea = Optional.empty();
 
-    zoom = Kurulus.INITIAL_ZOOM;
+    camera = new Vector();
+    zoom   = Kurulus.INITIAL_ZOOM;
     calculateScale();
 
     speed      = 0;
@@ -82,31 +76,32 @@ public final class UserInterface {
       zoom += Main.getKurulus().getInput().getWheelRotation();
       calculateScale();
       final var cursorNew = calculateCursorCoordinate();
-      worldTopLeft = worldTopLeft.sub(cursorNew.sub(cursorOld));
+      camera = camera.sub(cursorNew.sub(cursorOld));
     }
 
     if (panningKey.isDown()) {
       final var cursorMovement =
         Main.getKurulus().getInput().getCursorMovement().div(scale);
-      worldTopLeft = worldTopLeft.sub(cursorMovement);
+      camera = camera.sub(cursorMovement);
     }
 
-    screenTopLeft     = translateToScreenSpace(worldTopLeft);
-    screenBottomRight = screenTopLeft.add(Kurulus.WINDOW_SIZE);
-    worldBottomRight  = translateToWorldSpace(screenBottomRight);
+    final var screenTopLeft   = translateToScreenSpace(camera);
+    final var screenRectangle =
+      new Rectangle(screenTopLeft, screenTopLeft.add(Kurulus.WINDOW_SIZE));
+    visibleRectangle = new ProjectedRectangle(
+      translateToWorldSpace(screenRectangle), screenRectangle);
 
-    limitedWorldTopLeft      = worldTopLeft.floor().max(new Vector());
-    limitedWorldBottomRight  =
-      worldBottomRight.ceil().min(game.world().getSize());
-    limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
-    limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
+    final var worldBounds             =
+      new Rectangle(new Vector(), game.world().getSize());
+    final var boundedVisibleRectangle =
+      visibleRectangle.world().roundOutwards().intersect(worldBounds);
+    boundedRectangle = new ProjectedRectangle(boundedVisibleRectangle,
+      translateToScreenSpace(boundedVisibleRectangle));
 
-    final var cursorWorld = calculateCursorCoordinate();
-    if (cursorWorld.x() > limitedWorldTopLeft.x()
-      && cursorWorld.y() > limitedWorldTopLeft.y()
-      && cursorWorld.x() < limitedWorldBottomRight.x()
-      && cursorWorld.y() < limitedWorldBottomRight.y()) {
-      hoveredArea = Optional.of(game.world().getArea(cursorWorld.floor()));
+    if (boundedRectangle.screen()
+      .findIntersection(Main.getKurulus().getInput().getCursorPosition())) {
+      hoveredArea =
+        Optional.of(game.world().getArea(calculateCursorCoordinate().floor()));
     } else {
       hoveredArea = Optional.empty();
     }
@@ -146,10 +141,10 @@ public final class UserInterface {
   public void render() {
     final var renderer = Main.getKurulus().getRenderer();
 
-    for (var x = limitedWorldTopLeft.getX(); x < limitedWorldBottomRight.getX();
-      x++) {
-      for (var y = limitedWorldTopLeft.getY();
-        y < limitedWorldBottomRight.getY(); y++) {
+    for (var x = boundedRectangle.world().topLeft().getX();
+      x < boundedRectangle.world().bottomRight().getX(); x++) {
+      for (var y = boundedRectangle.world().topLeft().getY();
+        y < boundedRectangle.world().bottomRight().getY(); y++) {
         final var worldCoordinate  = new Vector(x, y);
         final var screenCoordinate = translateToScreenSpace(worldCoordinate);
         renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
@@ -157,20 +152,20 @@ public final class UserInterface {
       }
     }
 
-    for (var x = limitedWorldTopLeft.getX();
-      x <= limitedWorldBottomRight.getX(); x++) {
-      final var screenX = (x - worldTopLeft.x()) * scale;
-      renderer.drawLine(screenX, limitedScreenTopLeft.y(), screenX,
-        limitedScreenBottomRight.y(), Kurulus.MAP_GRID_STROKE,
-        Kurulus.MAP_GRID_COLOR);
+    for (var x = boundedRectangle.world().topLeft().getX();
+      x <= boundedRectangle.world().bottomRight().getX(); x++) {
+      final var screenX = (x - camera.x()) * scale;
+      renderer.drawLine(screenX, boundedRectangle.screen().topLeft().y(),
+        screenX, boundedRectangle.screen().bottomRight().y(),
+        Kurulus.MAP_GRID_STROKE, Kurulus.MAP_GRID_COLOR);
     }
 
-    for (var y = limitedWorldTopLeft.getY();
-      y <= limitedWorldBottomRight.getY(); y++) {
-      final var screenY = (y - worldTopLeft.y()) * scale;
-      renderer.drawLine(limitedScreenTopLeft.x(), screenY,
-        limitedScreenBottomRight.x(), screenY, Kurulus.MAP_GRID_STROKE,
-        Kurulus.MAP_GRID_COLOR);
+    for (var y = boundedRectangle.world().topLeft().getY();
+      y <= boundedRectangle.world().bottomRight().getY(); y++) {
+      final var screenY = (y - camera.y()) * scale;
+      renderer.drawLine(boundedRectangle.screen().topLeft().x(), screenY,
+        boundedRectangle.screen().bottomRight().x(), screenY,
+        Kurulus.MAP_GRID_STROKE, Kurulus.MAP_GRID_COLOR);
     }
 
     final var outlineThickness = Math.max(1, Math.round(scale * 0.02f));
@@ -213,12 +208,22 @@ public final class UserInterface {
       Main.getKurulus().getInput().getCursorPosition());
   }
 
+  private Rectangle translateToWorldSpace(Rectangle screenCoordinate) {
+    return new Rectangle(translateToWorldSpace(screenCoordinate.topLeft()),
+      translateToWorldSpace(screenCoordinate.bottomRight()));
+  }
+
+  private Rectangle translateToScreenSpace(Rectangle worldCoordinate) {
+    return new Rectangle(translateToScreenSpace(worldCoordinate.topLeft()),
+      translateToScreenSpace(worldCoordinate.bottomRight()));
+  }
+
   private Vector translateToWorldSpace(Vector screenCoordinate) {
-    return screenCoordinate.div(scale).add(worldTopLeft);
+    return screenCoordinate.div(scale).add(camera);
   }
 
   private Vector translateToScreenSpace(Vector worldCoordinate) {
-    return worldCoordinate.sub(worldTopLeft).mul(scale);
+    return worldCoordinate.sub(camera).mul(scale);
   }
 
   private void calculateScale() {
