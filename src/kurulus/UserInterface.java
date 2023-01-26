@@ -17,8 +17,10 @@ public final class UserInterface {
   private static final int[] DAY_LENGTHS = { Kurulus.convertSecondsToTicks(10),
     Kurulus.convertSecondsToTicks(1), Kurulus.convertSecondsToTicks(0.1), 1 };
 
-  private static final Font USERINTERFACE_FONT =
-    new Font("Inter", Font.PLAIN, 20);
+  private static final Font  USERINTERFACE_FONT       =
+    new Font("Space Mono", Font.BOLD, 20);
+  private static final Color USERINTERFACE_BACKGROUND =
+    new Color(0, 0, 0, 0.75f);
 
   private final Game  game;
   private final State controlled;
@@ -30,6 +32,9 @@ public final class UserInterface {
   private final Key speedingDownKey;
   private final Key settlingKey;
 
+  private int zoom;
+  private int scale;
+
   private Vector worldTopLeft;
   private Vector worldBottomRight;
   private Vector screenTopLeft;
@@ -39,15 +44,12 @@ public final class UserInterface {
   private Vector limitedScreenTopLeft;
   private Vector limitedScreenBottomRight;
 
-  private Optional<Area> hoveredArea;
-  private Optional<Area> selectedArea;
-
-  private int zoom;
-  private int scale;
-
   private int     speed;
   private int     dayCounter;
   private boolean paused;
+
+  private Optional<Area> hoveredArea;
+  private Optional<Area> selectedArea;
 
   public UserInterface(Game game, State controlled) {
     this.game       = game;
@@ -61,25 +63,21 @@ public final class UserInterface {
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
     settlingKey     = input.getKeyboardKey(KeyEvent.VK_S);
 
-    worldTopLeft             = new Vector();
-    worldBottomRight         = new Vector();
-    screenTopLeft            = new Vector();
-    screenBottomRight        = new Vector();
-    limitedWorldTopLeft      = new Vector();
-    limitedWorldBottomRight  = new Vector();
-    limitedScreenTopLeft     = new Vector();
-    limitedScreenBottomRight = new Vector();
-
-    hoveredArea  = Optional.empty();
-    selectedArea = Optional.empty();
-
     zoom = Kurulus.INITIAL_ZOOM;
     calculateScale();
+
+    final var screenCenter = Kurulus.WINDOW_SIZE.div(2).div(scale);
+    final var worldCenter  = game.world.getSize().div(2);
+    worldTopLeft = worldCenter.sub(screenCenter).floor();
+    calculateScreenRectangles();
 
     speed      = 0;
     dayCounter = 0;
     paused     = true;
     resetDayCounter();
+
+    hoveredArea  = Optional.empty();
+    selectedArea = Optional.empty();
   }
 
   public void update() {
@@ -97,15 +95,7 @@ public final class UserInterface {
       worldTopLeft = worldTopLeft.sub(cursorMovement);
     }
 
-    screenTopLeft     = translateToScreenSpace(worldTopLeft);
-    screenBottomRight = screenTopLeft.add(Kurulus.WINDOW_SIZE);
-    worldBottomRight  = translateToWorldSpace(screenBottomRight);
-
-    limitedWorldTopLeft      = worldTopLeft.floor().max(new Vector());
-    limitedWorldBottomRight  =
-      worldBottomRight.ceil().min(game.world.getSize());
-    limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
-    limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
+    calculateScreenRectangles();
 
     final var cursorWorld = calculateCursorCoordinate();
     if (cursorWorld.testIntersection(limitedWorldTopLeft,
@@ -155,49 +145,35 @@ public final class UserInterface {
   public void render() {
     final var renderer = Main.getKurulus().getRenderer();
 
-    final var limitedWorldSize =
-      limitedWorldBottomRight.sub(limitedWorldTopLeft);
-    if (limitedWorldSize.x() * limitedWorldSize.y()
-      < game.getSettlements().size()) {
-      for (var x = limitedWorldTopLeft.getX();
-        x < limitedWorldBottomRight.getX(); x++) {
-        for (var y = limitedWorldTopLeft.getY();
-          y < limitedWorldBottomRight.getY(); y++) {
-          final var worldCoordinate  = new Vector(x, y);
-          final var screenCoordinate = translateToScreenSpace(worldCoordinate);
-          renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
-            game.world.getArea(worldCoordinate).terrain().color());
+    for (var x = limitedWorldTopLeft.getX(); x < limitedWorldBottomRight.getX();
+      x++) {
+      for (var y = limitedWorldTopLeft.getY();
+        y < limitedWorldBottomRight.getY(); y++) {
+        final var worldCoordinate  = new Vector(x, y);
+        final var screenCoordinate = translateToScreenSpace(worldCoordinate);
+        renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
+          game.world.getArea(worldCoordinate).terrain().color());
 
-          final var settlement = game.getSettlement(worldCoordinate);
-          if (settlement.isEmpty()) { continue; }
+        final var settlement = game.getSettlement(worldCoordinate);
+        if (settlement.isEmpty()) { continue; }
 
-          final var size = Math.max(3, scale * 0.2f);
-          renderer.fillCircle(screenCoordinate.x() + (scale - size) / 2,
-            screenCoordinate.y() + (scale - size) / 2, size, Color.BLACK);
+        var coloredSize = (int) Math.floor(scale * 0.05f);
+        if (coloredSize % 2 == 0) { coloredSize++; }
+        if (coloredSize >= 2) {
+          renderer.fillSquare(screenCoordinate.x() + (scale - coloredSize) / 2,
+            screenCoordinate.y() + (scale - coloredSize) / 2, coloredSize,
+            settlement.get().owner() == controlled ? Color.GREEN
+              : Color.YELLOW);
+          renderer.drawSquare(screenCoordinate.x() + (scale - coloredSize) / 2,
+            screenCoordinate.y() + (scale - coloredSize) / 2, coloredSize,
+            new BasicStroke(1), Color.BLACK);
         }
-      }
-    } else {
-      for (var x = limitedWorldTopLeft.getX();
-        x < limitedWorldBottomRight.getX(); x++) {
-        for (var y = limitedWorldTopLeft.getY();
-          y < limitedWorldBottomRight.getY(); y++) {
-          final var worldCoordinate  = new Vector(x, y);
-          final var screenCoordinate = translateToScreenSpace(worldCoordinate);
-          renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
-            game.world.getArea(worldCoordinate).terrain().color());
-        }
-      }
 
-      for (final var settlement : game.getSettlements()) {
-        if (!settlement.area().coordinate()
-          .testIntersection(limitedWorldTopLeft, limitedWorldBottomRight)) {
-          continue;
-        }
-        final var screenCoordinate =
-          translateToScreenSpace(settlement.area().coordinate());
-        final var size             = Math.max(3, scale * 0.2f);
-        renderer.fillCircle(screenCoordinate.x() + (scale - size) / 2,
-          screenCoordinate.y() + (scale - size) / 2, size, Color.BLACK);
+        renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
+          new Color(settlement.get().owner().color().getRed(),
+            settlement.get().owner().color().getGreen(),
+            settlement.get().owner().color().getBlue(),
+            (int) (700 / Math.log(scale) - 100.5)));
       }
     }
 
@@ -241,30 +217,49 @@ public final class UserInterface {
         Kurulus.SELECTED_AREA_OUTLINE_COLOR);
     }
 
+    if (selectedArea.isPresent()) {
+      var y =
+        Kurulus.WINDOW_HEIGHT - renderer.getHeight(USERINTERFACE_FONT) - 5;
+      renderer.write(5, y, selectedArea.get().terrain().color(),
+        USERINTERFACE_BACKGROUND, USERINTERFACE_FONT,
+        "%s".formatted(selectedArea.get().terrain().name()));
+
+      final var settlement =
+        game.getSettlement(selectedArea.get().coordinate());
+      if (settlement.isPresent()) {
+        y -= renderer.getHeight(USERINTERFACE_FONT);
+        renderer.write(5, y, settlement.get().owner().color(),
+          USERINTERFACE_BACKGROUND, USERINTERFACE_FONT,
+          "%s".formatted(settlement.get().owner().name()));
+      }
+    }
+
     {
-      var y = Kurulus.WINDOW_HEIGHT * 0.1f;
-      renderer.write(5, y, controlled.color(), Color.BLACK, USERINTERFACE_FONT,
-        "%s: %d".formatted(controlled.name(),
+      var y = 5;
+      renderer.write(5, y, controlled.color(), USERINTERFACE_BACKGROUND,
+        USERINTERFACE_FONT, "%s: %d".formatted(controlled.name(),
           game.getSettlements(controlled).size()));
-      y += 10;
+      y += 5;
 
       for (final var state : game.getStates()) {
         if (state.equals(controlled)) { continue; }
         y += renderer.getHeight(USERINTERFACE_FONT);
-        renderer.write(5, y, state.color(), Color.BLACK, USERINTERFACE_FONT,
+        renderer.write(5, y, state.color(), USERINTERFACE_BACKGROUND,
+          USERINTERFACE_FONT,
           "%s: %d".formatted(state.name(), game.getSettlements(state).size()));
       }
     }
 
-    renderer.write(Kurulus.WINDOW_WIDTH - 5, 5, Color.WHITE, Color.BLACK,
-      USERINTERFACE_FONT, Renderer.HorizontalAlignment.RIGHT,
+    renderer.write(Kurulus.WINDOW_WIDTH - 5, 5, Color.WHITE,
+      USERINTERFACE_BACKGROUND, USERINTERFACE_FONT,
+      Renderer.HorizontalAlignment.RIGHT,
       "%02d.%02d.%d".formatted(game.getDate().day(), game.getDate().month(),
         game.getDate().year()),
       "Speed: %d".formatted(speed + 1));
 
     if (paused) {
       renderer.write(Kurulus.WINDOW_WIDTH / 2, Kurulus.WINDOW_HEIGHT * 0.05f,
-        Color.WHITE, Color.BLACK, USERINTERFACE_FONT,
+        Color.WHITE, USERINTERFACE_BACKGROUND, USERINTERFACE_FONT,
         Renderer.HorizontalAlignment.CENTER, "P A U S E D");
     }
   }
@@ -272,6 +267,18 @@ public final class UserInterface {
   private Vector calculateCursorCoordinate() {
     return translateToWorldSpace(
       Main.getKurulus().getInput().getCursorPosition());
+  }
+
+  private void calculateScreenRectangles() {
+    screenTopLeft     = translateToScreenSpace(worldTopLeft);
+    screenBottomRight = screenTopLeft.add(Kurulus.WINDOW_SIZE);
+    worldBottomRight  = translateToWorldSpace(screenBottomRight);
+
+    limitedWorldTopLeft      = worldTopLeft.floor().max(new Vector());
+    limitedWorldBottomRight  =
+      worldBottomRight.ceil().min(game.world.getSize());
+    limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
+    limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
   }
 
   private Vector translateToWorldSpace(Vector screenCoordinate) {
@@ -286,6 +293,7 @@ public final class UserInterface {
     if (zoom < Kurulus.MINIMUM_ZOOM) { zoom = Kurulus.MINIMUM_ZOOM; }
     if (zoom > Kurulus.MAXIMUM_ZOOM) { zoom = Kurulus.MAXIMUM_ZOOM; }
     scale = (int) (Math.pow(Kurulus.SCALE_BASE, zoom) + 0.5);
+    if (scale % 2 != 0) { scale++; }
   }
 
   private void resetDayCounter() { dayCounter = DAY_LENGTHS[speed]; }

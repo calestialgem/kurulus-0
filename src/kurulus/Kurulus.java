@@ -21,15 +21,15 @@ public final class Kurulus {
   public static final String VERSION       =
     "%d.%d.%d".formatted(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
 
-  public static final int    WINDOW_WIDTH  = 1280;
-  public static final int    WINDOW_HEIGHT = 720;
+  public static final int    WINDOW_WIDTH  = 1920;
+  public static final int    WINDOW_HEIGHT = 1080;
   public static final Vector WINDOW_SIZE   =
     new Vector(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   public static final double TICK_RATE = 100;
 
   public static final Vector   WORLD_SIZE                  =
-    new Vector(100, 100);
+    new Vector(128, 128);
   public static final double[] TERRAIN_ALTITUDE_BOUNDARIES =
     new double[] { 10, 3, 0.15, 0, -0.15, };
   public static final double   NUCLEI_FRACTION             = 0.05;
@@ -39,7 +39,7 @@ public final class Kurulus {
   public static final double   ALTITUDE_DROP_MAGNITUDE     = 1;
 
   public static final double SCALE_BASE   = 1.2;
-  public static final int    MINIMUM_ZOOM = 10;
+  public static final int    MINIMUM_ZOOM = 11;
   public static final int    INITIAL_ZOOM = 15;
   public static final int    MAXIMUM_ZOOM = 25;
 
@@ -81,22 +81,25 @@ public final class Kurulus {
       currentTick      = -1;
 
       final var generator  = new Generator(WORLD_SIZE,
-        new Terrain[] { new Terrain(Color.RED.darker(), true),
-          new Terrain(Color.YELLOW.darker(), true),
-          new Terrain(Color.GREEN.darker(), true),
-          new Terrain(Color.YELLOW, true), new Terrain(Color.BLUE, false),
-          new Terrain(Color.BLUE.darker(), false) },
+        new Terrain[] {
+          new Terrain("Mountains", new Color(173, 142, 112), true),
+          new Terrain("Deltas", new Color(255, 251, 193), true),
+          new Terrain("Plains", new Color(173, 231, 146), true),
+          new Terrain("Beaches", new Color(245, 234, 90), true),
+          new Terrain("Shores", new Color(134, 229, 255), false),
+          new Terrain("Seas", new Color(44, 116, 179), false) },
         TERRAIN_ALTITUDE_BOUNDARIES, NUCLEI_FRACTION, MIN_NUCLEUS_ALTITUDE,
         MAX_NUCLEUS_ALTITUDE, ALTITUDE_DROP_BALANCE, ALTITUDE_DROP_MAGNITUDE);
       final var rng        = new Random();
       final var game       = new Game(generator.generate(rng), rng);
-      final var controlled = game.createState("Turkey", Color.RED);
+      final var controlled =
+        game.createState("Turkey", new Color(255, 89, 123));
 
-      game.createOpponent("USA", Color.BLUE);
-      game.createOpponent("Germany", Color.GRAY);
-      game.createOpponent("France", Color.WHITE);
-      game.createOpponent("China", Color.YELLOW);
-      game.createOpponent("Australia", Color.GREEN);
+      game.createOpponent("USA", new Color(60, 121, 245));
+      game.createOpponent("Germany", new Color(186, 215, 233));
+      game.createOpponent("France", new Color(225, 77, 42));
+      game.createOpponent("China", new Color(242, 222, 186));
+      game.createOpponent("Australia", new Color(148, 80, 255));
 
       userInterface = new UserInterface(game, controlled);
 
@@ -127,12 +130,10 @@ public final class Kurulus {
           renderer = display.createRenderer();
           renderer.clear();
           userInterface.render();
-          renderer.write(5, 5, DEBUG_FOREGROUND, DEBUG_BACKGROUND, DEBUG_FONT,
-            "tick %d".formatted(currentTick),
+          renderer.write(WINDOW_WIDTH / 2f, 5, DEBUG_FOREGROUND,
+            DEBUG_BACKGROUND, DEBUG_FONT, Renderer.HorizontalAlignment.CENTER,
             "ups %.0f".formatted(realTickRate),
-            "fps %.0f".formatted(realFrameRate),
-            "cursor: (%.0f, %.0f)".formatted(input.getCursorPosition().x(),
-              input.getCursorPosition().y()));
+            "fps %.0f".formatted(realFrameRate));
           display.draw();
           frames++;
         }
