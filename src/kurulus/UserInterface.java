@@ -1,16 +1,26 @@
-package kurulus.userinterface;
+package kurulus;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
-import kurulus.Kurulus;
-import kurulus.Main;
-import kurulus.Vector;
+import kurulus.display.Renderer;
 import kurulus.display.input.Key;
+import kurulus.game.Date;
+import kurulus.game.Game;
 import kurulus.game.world.World;
 
-public final class GameInterface implements UserInterface {
-  private final World world;
-  private final Key   panningKey;
+public final class UserInterface {
+  private static final int[] DAY_LENGTHS = { Kurulus.convertSecondsToTicks(10),
+    Kurulus.convertSecondsToTicks(1), Kurulus.convertSecondsToTicks(0.1), 1 };
+
+  private final Key panningKey;
+  private final Key pausingKey;
+  private final Key speedingUpKey;
+  private final Key speedingDownKey;
+
+  private Game game;
 
   private Vector worldTopLeft;
   private Vector worldBottomRight;
@@ -24,9 +34,18 @@ public final class GameInterface implements UserInterface {
   private int zoom;
   private int scale;
 
-  public GameInterface(World world) {
-    this.world = world;
-    panningKey = Main.getKurulus().getInput().getMouseKey(MouseEvent.BUTTON2);
+  private int     speed;
+  private int     dayCounter;
+  private boolean paused;
+
+  public UserInterface(World world) {
+    final var input = Main.getKurulus().getInput();
+    panningKey      = input.getMouseKey(MouseEvent.BUTTON2);
+    pausingKey      = input.getKeyboardKey(KeyEvent.VK_SPACE);
+    speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
+    speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
+
+    game = new Game(world, new Date(1, 1, 2200));
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();
@@ -39,9 +58,14 @@ public final class GameInterface implements UserInterface {
 
     zoom = Kurulus.INITIAL_ZOOM;
     calculateScale();
+
+    speed      = 0;
+    dayCounter = 0;
+    paused     = true;
+    resetDayCounter();
   }
 
-  @Override public void update() {
+  public void update() {
     {
       final var cursorOld = calculateCursorCoordinate();
       zoom += Main.getKurulus().getInput().getWheelRotation();
@@ -61,12 +85,40 @@ public final class GameInterface implements UserInterface {
     worldBottomRight  = translateToWorldSpace(screenBottomRight);
 
     limitedWorldTopLeft      = worldTopLeft.floor().max(new Vector());
-    limitedWorldBottomRight  = worldBottomRight.ceil().min(world.getSize());
+    limitedWorldBottomRight  =
+      worldBottomRight.ceil().min(game.world().getSize());
     limitedScreenTopLeft     = translateToScreenSpace(limitedWorldTopLeft);
     limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
+
+    if (pausingKey.isPressed()) {
+      paused = !paused;
+      if (paused) { resetDayCounter(); }
+    }
+
+    if (speedingUpKey.isPressed()) {
+      speed++;
+      if (speed >= DAY_LENGTHS.length) { speed = DAY_LENGTHS.length - 1; }
+      resetDayCounter();
+    }
+
+    if (speedingDownKey.isPressed()) {
+      speed--;
+      if (speed < 0) { speed = 0; }
+      resetDayCounter();
+    }
+
+    if (!paused) {
+      dayCounter--;
+      if (dayCounter == 0) {
+        resetDayCounter();
+        game = game.simulateToday();
+      }
+    }
   }
 
-  @Override public void render() {
+  private void resetDayCounter() { dayCounter = DAY_LENGTHS[speed]; }
+
+  public void render() {
     final var renderer = Main.getKurulus().getRenderer();
 
     for (var x = limitedWorldTopLeft.getX(); x < limitedWorldBottomRight.getX();
@@ -76,7 +128,7 @@ public final class GameInterface implements UserInterface {
         final var worldCoordinate  = new Vector(x, y);
         final var screenCoordinate = translateToScreenSpace(worldCoordinate);
         renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
-          world.getArea(worldCoordinate).terrain().color());
+          game.world().getArea(worldCoordinate).terrain().color());
       }
     }
 
@@ -94,6 +146,18 @@ public final class GameInterface implements UserInterface {
       renderer.drawLine(limitedScreenTopLeft.x(), screenY,
         limitedScreenBottomRight.x(), screenY, Kurulus.MAP_GRID_STROKE,
         Kurulus.MAP_GRID_COLOR);
+    }
+
+    renderer.write(Kurulus.WINDOW_WIDTH - 5, 5, Color.WHITE, Color.BLACK,
+      new Font("Inter", Font.PLAIN, 20), Renderer.HorizontalAlignment.RIGHT,
+      "%02d.%02d.%d".formatted(game.date().day(), game.date().month(),
+        game.date().year()),
+      "Speed: %d".formatted(speed + 1));
+
+    if (paused) {
+      renderer.write(Kurulus.WINDOW_WIDTH / 2, Kurulus.WINDOW_HEIGHT * 0.05f,
+        Color.WHITE, Color.BLACK, new Font("Inter", Font.PLAIN, 32),
+        Renderer.HorizontalAlignment.CENTER, "P A U S E D");
     }
   }
 

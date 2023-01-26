@@ -2,6 +2,7 @@ package kurulus.display;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
@@ -10,27 +11,46 @@ import java.awt.image.BufferedImage;
 import kurulus.Kurulus;
 
 public final class Renderer {
+  public static record HorizontalAlignment(float shiftRatio) {
+    public static final HorizontalAlignment LEFT = new HorizontalAlignment(0);
+    public static final HorizontalAlignment RIGHT = new HorizontalAlignment(1);
+    public static final HorizontalAlignment CENTER =
+      new HorizontalAlignment(0.5f);
+  }
+
   private final Graphics2D graphics;
 
   Renderer(Graphics2D graphics) { this.graphics = graphics; }
 
   public void write(float x, float y, Color foreground, Color background,
     Font font, String... lines) {
+    write(x, y, foreground, background, font, HorizontalAlignment.LEFT, lines);
+  }
+
+  public void write(float x, float y, Color foreground, Color background,
+    Font font, HorizontalAlignment alignment, String... lines) {
     graphics.setColor(foreground);
     graphics.setFont(font);
     final var metrics = graphics.getFontMetrics();
     for (final var line : lines) {
-      if (background != null) {
-        graphics.setColor(background);
-        graphics.fillRect((int) (x - metrics.getHeight() * 0.05f + 0.5f),
-          (int) (y + 0.5f),
-          (int) (metrics.stringWidth(line) + metrics.getHeight() * 0.1f + 0.5f),
-          metrics.getHeight());
-        graphics.setColor(foreground);
-      }
-      y += metrics.getHeight();
-      graphics.drawString(line, x, y - metrics.getDescent());
+      y = writeLine(x - metrics.stringWidth(line) * alignment.shiftRatio(), y,
+        foreground, background, metrics, line);
     }
+  }
+
+  private float writeLine(float x, float y, Color foreground, Color background,
+    FontMetrics metrics, String line) {
+    if (background != null) {
+      graphics.setColor(background);
+      graphics.fillRect((int) (x - metrics.getHeight() * 0.05f + 0.5f),
+        (int) (y + 0.5f),
+        (int) (metrics.stringWidth(line) + metrics.getHeight() * 0.1f + 0.5f),
+        metrics.getHeight());
+      graphics.setColor(foreground);
+    }
+    y += metrics.getHeight();
+    graphics.drawString(line, x, y - metrics.getDescent());
+    return y;
   }
 
   public void drawImage(float x, float y, float scale, BufferedImage image) {

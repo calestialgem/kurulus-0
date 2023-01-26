@@ -12,8 +12,6 @@ import kurulus.display.Renderer;
 import kurulus.display.input.Input;
 import kurulus.game.world.Generator;
 import kurulus.game.world.Terrain;
-import kurulus.userinterface.GameInterface;
-import kurulus.userinterface.UserInterface;
 
 public final class Kurulus {
   public static final int    MAJOR_VERSION = 0;
@@ -51,6 +49,10 @@ public final class Kurulus {
   public static final Color  MAP_GRID_COLOR  = new Color(1f, 1f, 1f);
   public static final Stroke MAP_GRID_STROKE = new BasicStroke(1f);
 
+  public static int convertSecondsToTicks(double seconds) {
+    return (int) (seconds * TICK_RATE + 0.5);
+  }
+
   private final Display display;
 
   private Input         input;
@@ -83,7 +85,7 @@ public final class Kurulus {
         TERRAIN_ALTITUDE_BOUNDARIES, NUCLEI_FRACTION, MIN_NUCLEUS_ALTITUDE,
         MAX_NUCLEUS_ALTITUDE, ALTITUDE_DROP_BALANCE, ALTITUDE_DROP_MAGNITUDE);
 
-      userInterface = new GameInterface(generator.generate(new Random()));
+      userInterface = new UserInterface(generator.generate(new Random()));
 
       final var escape = input.getKeyboardKey(KeyEvent.VK_ESCAPE);
 
