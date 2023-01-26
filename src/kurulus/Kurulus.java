@@ -30,7 +30,7 @@ public final class Kurulus {
   public static final Vector   WORLD_SIZE                  =
     new Vector(100, 100);
   public static final double[] TERRAIN_ALTITUDE_BOUNDARIES =
-    new double[] { 10, 3, 0.15, 0, -0.15 };
+    new double[] { 10, 3, 0.15, 0, -0.15, };
   public static final double   NUCLEI_FRACTION             = 0.05;
   public static final double   MIN_NUCLEUS_ALTITUDE        = 8;
   public static final double   MAX_NUCLEUS_ALTITUDE        = 30;
@@ -80,11 +80,11 @@ public final class Kurulus {
       currentTick      = -1;
 
       final var generator = new Generator(WORLD_SIZE,
-        new Terrain[] { new Terrain(Color.RED.darker()),
-          new Terrain(Color.YELLOW.darker()), new Terrain(Color.GREEN.darker()),
-          new Terrain(Color.YELLOW.brighter()),
-          new Terrain(Color.BLUE.brighter()), new Terrain(Color.BLUE),
-          new Terrain(Color.BLUE.darker()) },
+        new Terrain[] { new Terrain(Color.RED.darker(), true),
+          new Terrain(Color.YELLOW.darker(), true),
+          new Terrain(Color.GREEN.darker(), true),
+          new Terrain(Color.YELLOW, true), new Terrain(Color.BLUE, false),
+          new Terrain(Color.BLUE.darker(), false) },
         TERRAIN_ALTITUDE_BOUNDARIES, NUCLEI_FRACTION, MIN_NUCLEUS_ALTITUDE,
         MAX_NUCLEUS_ALTITUDE, ALTITUDE_DROP_BALANCE, ALTITUDE_DROP_MAGNITUDE);
 

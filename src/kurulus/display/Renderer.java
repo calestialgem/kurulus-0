@@ -64,6 +64,12 @@ public final class Renderer {
       (int) (size + 0.5f));
   }
 
+  public void fillCircle(float x, float y, float size, Color color) {
+    graphics.setColor(color);
+    graphics.fillOval((int) (x + 0.5f), (int) (y + 0.5f), (int) (size + 0.5f),
+      (int) (size + 0.5f));
+  }
+
   public void drawSquare(float x, float y, float size, Stroke stroke,
     Color color) {
     graphics.setColor(color);

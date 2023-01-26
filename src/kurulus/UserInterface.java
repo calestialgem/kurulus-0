@@ -5,12 +5,16 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import kurulus.display.Renderer;
 import kurulus.display.input.Key;
 import kurulus.game.Date;
 import kurulus.game.Game;
+import kurulus.game.settlement.Settlement;
 import kurulus.game.world.Area;
 import kurulus.game.world.World;
 
@@ -23,6 +27,7 @@ public final class UserInterface {
   private final Key pausingKey;
   private final Key speedingUpKey;
   private final Key speedingDownKey;
+  private final Key settlingKey;
 
   private Game game;
 
@@ -52,8 +57,9 @@ public final class UserInterface {
     pausingKey      = input.getKeyboardKey(KeyEvent.VK_SPACE);
     speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
+    settlingKey     = input.getKeyboardKey(KeyEvent.VK_S);
 
-    game = new Game(world, new Date(1, 1, 2200));
+    game = new Game(world, new Date(1, 1, 2200), Map.of());
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();
@@ -117,6 +123,16 @@ public final class UserInterface {
       hoveredArea  = Optional.empty();
     }
 
+    if (settlingKey.isPressed() && selectedArea.isPresent()
+      && selectedArea.get().terrain().land()
+      && !game.settlements().containsKey(selectedArea.get())) {
+      final var settlements = new HashMap<>(game.settlements());
+      settlements.put(selectedArea.get(), new Settlement(selectedArea.get()));
+      game         = new Game(game.world(), game.date(),
+        Collections.unmodifiableMap(settlements));
+      selectedArea = Optional.empty();
+    }
+
     if (pausingKey.isPressed()) {
       paused = !paused;
       if (paused) { resetDayCounter(); }
@@ -171,6 +187,14 @@ public final class UserInterface {
       renderer.drawLine(limitedScreenTopLeft.x(), screenY,
         limitedScreenBottomRight.x(), screenY, Kurulus.MAP_GRID_STROKE,
         Kurulus.MAP_GRID_COLOR);
+    }
+
+    for (final var settlement : game.settlements().values()) {
+      final var screenCoordinate =
+        translateToScreenSpace(settlement.area().coordinate());
+      final var size             = Math.max(3, scale * 0.2f);
+      renderer.fillCircle(screenCoordinate.x() + (scale - size) / 2,
+        screenCoordinate.y() + (scale - size) / 2, size, Color.BLACK);
     }
 
     final var outlineThickness = Math.max(1, Math.round(scale * 0.02f));
