@@ -1,4 +1,4 @@
-package kurulus.game.world;
+package kurulus.game;
 
 import java.util.HashMap;
 import java.util.HashSet;

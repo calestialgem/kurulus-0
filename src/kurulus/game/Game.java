@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.Random;
 
 import kurulus.Vector;
-import kurulus.game.world.World;
 
 public final class Game {
   public final World  world;

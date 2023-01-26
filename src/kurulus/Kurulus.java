@@ -11,8 +11,8 @@ import kurulus.display.Display;
 import kurulus.display.Input;
 import kurulus.display.Renderer;
 import kurulus.game.Game;
-import kurulus.game.world.Generator;
-import kurulus.game.world.Terrain;
+import kurulus.game.Generator;
+import kurulus.game.Terrain;
 
 public final class Kurulus {
   public static final int    MAJOR_VERSION = 0;

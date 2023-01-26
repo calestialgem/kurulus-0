@@ -1,4 +1,4 @@
-package kurulus.game.world;
+package kurulus.game;
 
 import java.awt.Color;
 

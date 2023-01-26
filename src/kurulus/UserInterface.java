@@ -9,9 +9,9 @@ import java.util.Optional;
 
 import kurulus.display.Key;
 import kurulus.display.Renderer;
+import kurulus.game.Area;
 import kurulus.game.Game;
 import kurulus.game.State;
-import kurulus.game.world.Area;
 
 public final class UserInterface {
   private static final int[] DAY_LENGTHS = { Kurulus.convertSecondsToTicks(10),
