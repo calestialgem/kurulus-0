@@ -162,8 +162,7 @@ public final class UserInterface {
         if (coloredSize >= 2) {
           renderer.fillSquare(screenCoordinate.x() + (scale - coloredSize) / 2,
             screenCoordinate.y() + (scale - coloredSize) / 2, coloredSize,
-            settlement.get().owner() == controlled ? Color.GREEN
-              : Color.YELLOW);
+            game.getStance(controlled, settlement.get().owner()).color());
           renderer.drawSquare(screenCoordinate.x() + (scale - coloredSize) / 2,
             screenCoordinate.y() + (scale - coloredSize) / 2, coloredSize,
             new BasicStroke(1), Color.BLACK);
@@ -231,6 +230,10 @@ public final class UserInterface {
         renderer.write(5, y, settlement.get().owner().color(),
           USERINTERFACE_BACKGROUND, USERINTERFACE_FONT,
           "%s".formatted(settlement.get().owner().name()));
+        y -= renderer.getHeight(USERINTERFACE_FONT);
+        final var stance = game.getStance(controlled, settlement.get().owner());
+        renderer.write(5, y, stance.color(), USERINTERFACE_BACKGROUND,
+          USERINTERFACE_FONT, "%s".formatted(stance.name()));
       }
     }
 

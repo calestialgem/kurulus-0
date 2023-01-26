@@ -64,6 +64,11 @@ public final class Game {
     return true;
   }
 
+  public Stance getStance(State holder, State target) {
+    if (holder.equals(target)) { return Stance.SELF; }
+    return Stance.NEUTRAL;
+  }
+
   public Collection<State> getStates() {
     return Collections.unmodifiableCollection(states);
   }
