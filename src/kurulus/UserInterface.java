@@ -14,7 +14,7 @@ import kurulus.display.Renderer;
 import kurulus.display.input.Key;
 import kurulus.game.Date;
 import kurulus.game.Game;
-import kurulus.game.settlement.Settlement;
+import kurulus.game.Settlement;
 import kurulus.game.world.Area;
 import kurulus.game.world.World;
 

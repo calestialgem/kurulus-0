@@ -2,7 +2,6 @@ package kurulus.game;
 
 import java.util.Map;
 
-import kurulus.game.settlement.Settlement;
 import kurulus.game.world.Area;
 import kurulus.game.world.World;
 

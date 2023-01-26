@@ -1,4 +1,4 @@
-package kurulus.game.settlement;
+package kurulus.game;
 
 import kurulus.game.world.Area;
 
