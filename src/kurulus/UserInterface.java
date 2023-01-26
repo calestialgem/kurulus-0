@@ -108,10 +108,8 @@ public final class UserInterface {
     limitedScreenBottomRight = translateToScreenSpace(limitedWorldBottomRight);
 
     final var cursorWorld = calculateCursorCoordinate();
-    if (cursorWorld.x() > limitedWorldTopLeft.x()
-      && cursorWorld.y() > limitedWorldTopLeft.y()
-      && cursorWorld.x() < limitedWorldBottomRight.x()
-      && cursorWorld.y() < limitedWorldBottomRight.y()) {
+    if (cursorWorld.testIntersection(limitedWorldTopLeft,
+      limitedWorldBottomRight)) {
       hoveredArea = Optional.of(game.world.getArea(cursorWorld.floor()));
     } else {
       hoveredArea = Optional.empty();
@@ -157,14 +155,49 @@ public final class UserInterface {
   public void render() {
     final var renderer = Main.getKurulus().getRenderer();
 
-    for (var x = limitedWorldTopLeft.getX(); x < limitedWorldBottomRight.getX();
-      x++) {
-      for (var y = limitedWorldTopLeft.getY();
-        y < limitedWorldBottomRight.getY(); y++) {
-        final var worldCoordinate  = new Vector(x, y);
-        final var screenCoordinate = translateToScreenSpace(worldCoordinate);
-        renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
-          game.world.getArea(worldCoordinate).terrain().color());
+    final var limitedWorldSize =
+      limitedWorldBottomRight.sub(limitedWorldTopLeft);
+    if (limitedWorldSize.x() * limitedWorldSize.y()
+      < game.getSettlements().size()) {
+      for (var x = limitedWorldTopLeft.getX();
+        x < limitedWorldBottomRight.getX(); x++) {
+        for (var y = limitedWorldTopLeft.getY();
+          y < limitedWorldBottomRight.getY(); y++) {
+          final var worldCoordinate  = new Vector(x, y);
+          final var screenCoordinate = translateToScreenSpace(worldCoordinate);
+          renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
+            game.world.getArea(worldCoordinate).terrain().color());
+
+          final var settlement = game.getSettlement(worldCoordinate);
+          if (settlement.isEmpty()) { continue; }
+
+          final var size = Math.max(3, scale * 0.2f);
+          renderer.fillCircle(screenCoordinate.x() + (scale - size) / 2,
+            screenCoordinate.y() + (scale - size) / 2, size, Color.BLACK);
+        }
+      }
+    } else {
+      for (var x = limitedWorldTopLeft.getX();
+        x < limitedWorldBottomRight.getX(); x++) {
+        for (var y = limitedWorldTopLeft.getY();
+          y < limitedWorldBottomRight.getY(); y++) {
+          final var worldCoordinate  = new Vector(x, y);
+          final var screenCoordinate = translateToScreenSpace(worldCoordinate);
+          renderer.fillSquare(screenCoordinate.x(), screenCoordinate.y(), scale,
+            game.world.getArea(worldCoordinate).terrain().color());
+        }
+      }
+
+      for (final var settlement : game.getSettlements()) {
+        if (!settlement.area().coordinate()
+          .testIntersection(limitedWorldTopLeft, limitedWorldBottomRight)) {
+          continue;
+        }
+        final var screenCoordinate =
+          translateToScreenSpace(settlement.area().coordinate());
+        final var size             = Math.max(3, scale * 0.2f);
+        renderer.fillCircle(screenCoordinate.x() + (scale - size) / 2,
+          screenCoordinate.y() + (scale - size) / 2, size, Color.BLACK);
       }
     }
 
@@ -184,17 +217,10 @@ public final class UserInterface {
         Kurulus.MAP_GRID_COLOR);
     }
 
-    for (final var settlement : game.getSettlements()) {
-      final var screenCoordinate =
-        translateToScreenSpace(settlement.area().coordinate());
-      final var size             = Math.max(3, scale * 0.2f);
-      renderer.fillCircle(screenCoordinate.x() + (scale - size) / 2,
-        screenCoordinate.y() + (scale - size) / 2, size, Color.BLACK);
-    }
-
     final var outlineThickness = Math.max(1, Math.round(scale * 0.02f));
     final var outlineSize      = Math.max(1, scale - outlineThickness * 2);
-    if (hoveredArea.isPresent()) {
+    if (hoveredArea.isPresent() && hoveredArea.get().coordinate()
+      .testIntersection(worldTopLeft, worldBottomRight)) {
       final var screen = translateToScreenSpace(hoveredArea.get().coordinate());
       renderer.drawSquare(screen.x() + outlineThickness,
         screen.y() + outlineThickness, outlineSize,
@@ -202,7 +228,8 @@ public final class UserInterface {
         Kurulus.HOVERED_AREA_OUTLINE_COLOR);
     }
 
-    if (selectedArea.isPresent()) {
+    if (selectedArea.isPresent() && selectedArea.get().coordinate()
+      .testIntersection(worldTopLeft, worldBottomRight)) {
       final var screen =
         translateToScreenSpace(selectedArea.get().coordinate());
       renderer.drawSquare(

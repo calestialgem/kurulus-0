@@ -40,4 +40,9 @@ public record Vector(float x, float y) {
   public Vector min(Vector other) {
     return new Vector(Math.min(x, other.x), Math.min(y, other.y));
   }
+
+  public boolean testIntersection(Vector minCorner, Vector maxCorner) {
+    return x > minCorner.x && y > minCorner.y && x < maxCorner.x
+      && y < maxCorner.y;
+  }
 }

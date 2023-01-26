@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import kurulus.Vector;
@@ -52,14 +53,14 @@ public final class Game {
     return state;
   }
 
-  public boolean settle(Vector location, State owner) {
-    final var area = world.getArea(location);
-    if (!area.terrain().land() || settlements.containsKey(location)) {
+  public boolean settle(Vector coordinate, State owner) {
+    final var area = world.getArea(coordinate);
+    if (!area.terrain().land() || settlements.containsKey(coordinate)) {
       return false;
     }
     final var settlement = new Settlement(area, owner);
     owners.get(owner).add(settlement);
-    settlements.put(location, settlement);
+    settlements.put(coordinate, settlement);
     return true;
   }
 
@@ -73,6 +74,11 @@ public final class Game {
 
   public Collection<Settlement> getSettlements() {
     return Collections.unmodifiableCollection(settlements.values());
+  }
+
+  public Optional<Settlement> getSettlement(Vector coordinate) {
+    if (!settlements.containsKey(coordinate)) { return Optional.empty(); }
+    return Optional.of(settlements.get(coordinate));
   }
 
   public Date getDate() { return date; }
