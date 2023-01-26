@@ -10,11 +10,15 @@ import java.util.Optional;
 import kurulus.display.Renderer;
 import kurulus.display.input.Key;
 import kurulus.game.Game;
+import kurulus.game.State;
 import kurulus.game.world.Area;
 
 public final class UserInterface {
   private static final int[] DAY_LENGTHS = { Kurulus.convertSecondsToTicks(10),
     Kurulus.convertSecondsToTicks(1), Kurulus.convertSecondsToTicks(0.1), 1 };
+
+  private static final Font USERINTERFACE_FONT =
+    new Font("Inter", Font.PLAIN, 20);
 
   private final Game game;
 
@@ -24,6 +28,8 @@ public final class UserInterface {
   private final Key speedingUpKey;
   private final Key speedingDownKey;
   private final Key settlingKey;
+
+  private State controlled;
 
   private Vector worldTopLeft;
   private Vector worldBottomRight;
@@ -54,6 +60,8 @@ public final class UserInterface {
     speedingUpKey   = input.getKeyboardKey(KeyEvent.VK_ADD);
     speedingDownKey = input.getKeyboardKey(KeyEvent.VK_SUBTRACT);
     settlingKey     = input.getKeyboardKey(KeyEvent.VK_S);
+
+    controlled = game.createState("Republic of Turkey", Color.RED);
 
     worldTopLeft             = new Vector();
     worldBottomRight         = new Vector();
@@ -118,7 +126,7 @@ public final class UserInterface {
     }
 
     if (settlingKey.isPressed() && selectedArea.isPresent()
-      && game.settle(selectedArea.get())) {
+      && game.settle(selectedArea.get().coordinate(), controlled)) {
       selectedArea = Optional.empty();
     }
 
@@ -178,7 +186,7 @@ public final class UserInterface {
         Kurulus.MAP_GRID_COLOR);
     }
 
-    for (final var settlement : game.settlements.values()) {
+    for (final var settlement : game.getSettlements()) {
       final var screenCoordinate =
         translateToScreenSpace(settlement.area().coordinate());
       final var size             = Math.max(3, scale * 0.2f);
@@ -208,15 +216,30 @@ public final class UserInterface {
         Kurulus.SELECTED_AREA_OUTLINE_COLOR);
     }
 
+    {
+      var y = Kurulus.WINDOW_HEIGHT * 0.1f;
+      renderer.write(5, y, controlled.color(), Color.BLACK, USERINTERFACE_FONT,
+        "%s: %d".formatted(controlled.name(),
+          game.getSettlements(controlled).size()));
+      y += 10;
+
+      for (final var state : game.getStates()) {
+        if (state.equals(controlled)) { continue; }
+        y += renderer.getHeight(USERINTERFACE_FONT);
+        renderer.write(5, y, state.color(), Color.BLACK, USERINTERFACE_FONT,
+          "%s: %d".formatted(state.name(), game.getSettlements(state).size()));
+      }
+    }
+
     renderer.write(Kurulus.WINDOW_WIDTH - 5, 5, Color.WHITE, Color.BLACK,
-      new Font("Inter", Font.PLAIN, 20), Renderer.HorizontalAlignment.RIGHT,
+      USERINTERFACE_FONT, Renderer.HorizontalAlignment.RIGHT,
       "%02d.%02d.%d".formatted(game.getDate().day(), game.getDate().month(),
         game.getDate().year()),
       "Speed: %d".formatted(speed + 1));
 
     if (paused) {
       renderer.write(Kurulus.WINDOW_WIDTH / 2, Kurulus.WINDOW_HEIGHT * 0.05f,
-        Color.WHITE, Color.BLACK, new Font("Inter", Font.PLAIN, 32),
+        Color.WHITE, Color.BLACK, USERINTERFACE_FONT,
         Renderer.HorizontalAlignment.CENTER, "P A U S E D");
     }
   }

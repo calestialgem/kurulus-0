@@ -2,4 +2,4 @@ package kurulus.game;
 
 import kurulus.game.world.Area;
 
-public record Settlement(Area area) {}
+public record Settlement(Area area, State owner) {}

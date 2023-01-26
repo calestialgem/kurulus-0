@@ -22,6 +22,11 @@ public final class Renderer {
 
   Renderer(Graphics2D graphics) { this.graphics = graphics; }
 
+  public float getHeight(Font font) {
+    graphics.setFont(font);
+    return graphics.getFontMetrics().getHeight();
+  }
+
   public void write(float x, float y, Color foreground, Color background,
     Font font, String... lines) {
     write(x, y, foreground, background, font, HorizontalAlignment.LEFT, lines);
