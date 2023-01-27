@@ -99,9 +99,9 @@ public final class Kurulus {
         game.createState("Turkey", new Color(255, 89, 123));
 
       game.createOpponent("USA", new Color(60, 121, 245));
-      game.createOpponent("Germany", new Color(186, 215, 233));
+      game.createOpponent("Germany", new Color(136, 165, 183));
       game.createOpponent("France", new Color(225, 77, 42));
-      game.createOpponent("China", new Color(242, 222, 186));
+      game.createOpponent("China", new Color(42, 242, 77));
       game.createOpponent("Australia", new Color(148, 80, 255));
 
       userInterface = new UserInterface(game, controlled);
